@@ -1,0 +1,28 @@
+{
+  "sourceLanguage": "tr",
+  "strings": {
+    "ObjectScanner": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ObjectScanner"
+          }
+        }
+      }
+    },
+    "Objeleri 3B taramak icin kameraya erisim gerekiyor.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera access is required to scan objects in 3D."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

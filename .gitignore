@@ -1,0 +1,28 @@
+## macOS
+.DS_Store
+
+## Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+## Swift Package Manager
+.build/
+.swiftpm/
+
+## Local reconstruction output — these are scan artefacts, not source.
+## A single room USDZ runs to tens of megabytes.
+*.usdz
+*.usdc
+*.usda
+*.ply
+*.obj
+*.stl

@@ -1,0 +1,3361 @@
+{
+  "sourceLanguage": "tr",
+  "strings": {
+    "%@ kaldı": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        }
+      }
+    },
+    "%lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
+          }
+        }
+      }
+    },
+    "%lld MP": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld MP"
+          }
+        }
+      }
+    },
+    "%lld fiziksel lens. Aynı modelin iki cihazında bu liste farklıysa eksik olan lens arızalı demektir.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld physical lenses. If this list differs between two units of the same model, the missing lens is faulty."
+          }
+        }
+      }
+    },
+    "%lld fotoğraf": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld photos"
+          }
+        }
+      }
+    },
+    "%lld fotoğraf işlendi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld photos processed"
+          }
+        }
+      }
+    },
+    "%lld fotoğraf silinecek.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld photos will be deleted."
+          }
+        }
+      }
+    },
+    "%lld görüntü": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld images"
+          }
+        }
+      }
+    },
+    "%lld görüntü işlendi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld images processed"
+          }
+        }
+      }
+    },
+    "%lld görüntü silinecek.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld images will be deleted."
+          }
+        }
+      }
+    },
+    "%lld kare": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld frames"
+          }
+        }
+      }
+    },
+    "%lld nokta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld points"
+          }
+        }
+      }
+    },
+    "%lld nokta silinecek.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld points will be deleted."
+          }
+        }
+      }
+    },
+    "%lld px": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld px"
+          }
+        }
+      }
+    },
+    "%lld tarama silinsin mi?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete %lld scans?"
+          }
+        }
+      }
+    },
+    "%lld × %lld × %lld mm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld × %lld × %lld mm"
+          }
+        }
+      }
+    },
+    "%lld%%": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
+          }
+        }
+      }
+    },
+    "%lld. geçiş": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pass %lld"
+          }
+        }
+      }
+    },
+    "%lld/%lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld/%lld"
+          }
+        }
+      }
+    },
+    "1 dakikadan az": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "less than a minute"
+          }
+        }
+      }
+    },
+    "1 m'den büyük": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "larger than 1 m"
+          }
+        }
+      }
+    },
+    "15 cm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "15 cm"
+          }
+        }
+      }
+    },
+    "30 cm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 cm"
+          }
+        }
+      }
+    },
+    "30 cm – 1 m": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 cm – 1 m"
+          }
+        }
+      }
+    },
+    "3B baskı. Sadece geometri, materyal taşımaz.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D printing. Geometry only, no materials."
+          }
+        }
+      }
+    },
+    "5 cm'den küçük": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "smaller than 5 cm"
+          }
+        }
+      }
+    },
+    "5 cm'in altındaki objeler her iki sensörün de çözünürlük sınırına girer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objects under 5 cm hit the resolution limit of both sensors."
+          }
+        }
+      }
+    },
+    "5 – 30 cm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 – 30 cm"
+          }
+        }
+      }
+    },
+    "60 cm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "60 cm"
+          }
+        }
+      }
+    },
+    "Algılama başlamadı. Cihazı objeye doğrultup tekrar deneyin.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detection did not start. Point the device at the object and try again."
+          }
+        }
+      }
+    },
+    "Algılamayı Başlat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Detection"
+          }
+        }
+      }
+    },
+    "Alt yüz eksik kalacak": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The underside will be missing"
+          }
+        }
+      }
+    },
+    "Alt yüzü de istiyorsanız objeyi çevirip devam edin.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you want the underside too, flip the object and continue."
+          }
+        }
+      }
+    },
+    "Anladım, Başla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Got It, Start"
+          }
+        }
+      }
+    },
+    "Apple ekosistemi, AR Quick Look. Kaynak format — dönüşüm yok.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple ecosystem, AR Quick Look. The source format — no conversion."
+          }
+        }
+      }
+    },
+    "Arka ana kamera bulunamadı. Tarama yapılamaz.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No rear main camera found. Scanning is not possible."
+          }
+        }
+      }
+    },
+    "Arka kamera bulunamadı.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No rear camera found."
+          }
+        }
+      }
+    },
+    "Arka kamera envanteri": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rear camera inventory"
+          }
+        }
+      }
+    },
+    "Arka kamera • obje döner • telefon sabit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rear camera • object rotates • phone stays put"
+          }
+        }
+      }
+    },
+    "Arka kamera • sen dönersin • rehberli akış": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rear camera • you orbit • guided flow"
+          }
+        }
+      }
+    },
+    "Arka kameranın gördüğü ortamda doku yok — poz buradan geliyor, dokulu bir yöne dönün": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No texture in what the rear camera sees — the pose comes from there, so turn toward something textured"
+          }
+        }
+      }
+    },
+    "Arşiv yazılamadı.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not write the archive."
+          }
+        }
+      }
+    },
+    "Ayna ve büyük camlara dikkat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch out for mirrors and large glass"
+          }
+        }
+      }
+    },
+    "Bilgi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Info"
+          }
+        }
+      }
+    },
+    "Bir tur doldu — telefonun yüksekliğini veya açısını değiştirip bir tur daha çek": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One full turn done — change the phone's height or angle and shoot another"
+          }
+        }
+      }
+    },
+    "Bir tur yetmez — yüksekliği değiştir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One turn is not enough — change the height"
+          }
+        }
+      }
+    },
+    "Biraz uzaklaşın": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move back a little"
+          }
+        }
+      }
+    },
+    "Biraz var": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some"
+          }
+        }
+      }
+    },
+    "Biraz yaklaşın — detay belirgin artar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move a little closer — detail improves noticeably"
+          }
+        }
+      }
+    },
+    "Birinci turda telefonu duvarlara doğru tut. İkinci turda biraz aşağı eğ, zemini ve mobilyanın önünü gör. Tek tur yeterli kare bırakmıyor ve model yırtık çıkıyor.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the first loop hold the phone toward the walls. On the second, tilt it down to see the floor and the fronts of the furniture. A single loop does not leave enough frames and the model comes out torn."
+          }
+        }
+      }
+    },
+    "Bitir ve Kaydet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish and Save"
+          }
+        }
+      }
+    },
+    "Bitir ve Modeli Oluştur": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish and Build Model"
+          }
+        }
+      }
+    },
+    "Bitti": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "Bol desen / doku": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rich pattern / texture"
+          }
+        }
+      }
+    },
+    "Boyut": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size"
+          }
+        }
+      }
+    },
+    "Bu cihaz cihaz-üstü fotogrametriyi desteklemiyor.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This device does not support on-device photogrammetry."
+          }
+        }
+      }
+    },
+    "Bu cihaz ön kamerayla dünya takibini desteklemiyor. Poz bilgisi olmadan tarama birleştirilemez.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This device does not support world tracking with the front camera. Without pose data the scan cannot be fused."
+          }
+        }
+      }
+    },
+    "Bu cihazda fotoğraflara derinlik gömülemiyor — model gerçek boyutta olmayacak, ölçeksiz çıkacak.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This device cannot embed depth in photos — the model will have no real-world scale."
+          }
+        }
+      }
+    },
+    "Bu format materyal/texture taşımaz — sadece geometri.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This format carries no materials or textures — geometry only."
+          }
+        }
+      }
+    },
+    "Bu mod henüz gelmedi (Faz 2).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This mode is not available yet (Phase 2)."
+          }
+        }
+      }
+    },
+    "Bu mod odanın yapısını çıkarır: duvarlar, kapılar, pencereler ve mobilya. Mobilya tanınmış kutular olarak gelir — koltuğun kumaş kıvrımlarını değil. Detaylı obje modeli için Fotogrametri modunu kullan.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This mode captures the room's structure: walls, doors, windows and furniture. Furniture arrives as recognised boxes — not the folds in the sofa fabric. For a detailed object model, use Photogrammetry."
+          }
+        }
+      }
+    },
+    "Bu ne demek?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What does this mean?"
+          }
+        }
+      }
+    },
+    "Bu obje için doğru araç TrueDepth modu, ancak o mod henüz gelmedi (Faz 2).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TrueDepth is the right tool for this object, but that mode is not available yet (Phase 2)."
+          }
+        }
+      }
+    },
+    "Bu obje çevrilerek taranamaz — yörüngeye devam edin": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This object cannot be scanned flipped — keep orbiting"
+          }
+        }
+      }
+    },
+    "Bu obje çevrilerek taranamıyor — farklı yükseklikten yeni bir yörünge çekebilirsiniz.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This object cannot be scanned flipped — you can shoot another orbit from a different height."
+          }
+        }
+      }
+    },
+    "Bu üç cevap hangi sensörün doğru olduğunu belirler. En kritik olan desen: fotogrametri geometriyi yüzey deseninden üretir.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These three answers decide which sensor is right. Pattern matters most: photogrammetry derives geometry from surface detail."
+          }
+        }
+      }
+    },
+    "Bulanık kare atlandı — daha yavaş çevirin": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blurry frame skipped — rotate more slowly"
+          }
+        }
+      }
+    },
+    "Bulut objenin aynası gibi çıkıyorsa bunu açın. Değiştirmek taramayı sıfırlar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn this on if the cloud comes out mirrored. Changing it resets the scan."
+          }
+        }
+      }
+    },
+    "Bölgeyi Aç": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock Region"
+          }
+        }
+      }
+    },
+    "Büyük objede tek geçiş yetmez: farklı yüksekliklerde 2-3 yörünge çekin.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One pass is not enough on a large object: shoot 2-3 orbits at different heights."
+          }
+        }
+      }
+    },
+    "Cihaz yetenekleri": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Device capabilities"
+          }
+        }
+      }
+    },
+    "Cihaz üstü (reduced)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On-device (reduced)"
+          }
+        }
+      }
+    },
+    "Cihaz üstü model `reduced` seviyede. Aynı görüntüleri bir Mac'te `detail: .full` veya `.raw` ile işlerseniz belirgin şekilde yüksek poligonlu mesh alırsınız. Görüntüleri silerseniz bu yol kapanır.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The on-device model is at `reduced`. Processing the same images on a Mac with `detail: .full` or `.raw` yields a substantially higher-poly mesh. Deleting the images closes that path."
+          }
+        }
+      }
+    },
+    "Cihaz üstü yeniden yapılandırma: reduced": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On-device reconstruction: reduced"
+          }
+        }
+      }
+    },
+    "Cihazı objeye doğrultun": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Point the device at the object"
+          }
+        }
+      }
+    },
+    "Daha yavaş hareket ettirin": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move more slowly"
+          }
+        }
+      }
+    },
+    "Deneysel. Fotogrametri geometriyi yüzey deseninden türetir; boş boyalı duvarlarda zayıf kalır, mobilyalı ve dokulu odalarda iyi çıkar. Ayrıca oda modelinden sonra birkaç dakika daha işlem sürer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Experimental. Photogrammetry derives geometry from surface detail, so it struggles on bare painted walls and does well in furnished, textured rooms. It also adds a few minutes of processing after the room model."
+          }
+        }
+      }
+    },
+    "Desen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pattern"
+          }
+        }
+      }
+    },
+    "Desensiz yüzeyde fotogrametri zorlanır, ama şu an mevcut olan tek mod bu.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photogrammetry struggles on a featureless surface, but it is the only mode available right now."
+          }
+        }
+      }
+    },
+    "Donanım uyarısı": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hardware warning"
+          }
+        }
+      }
+    },
+    "Duvar, kapı, pencere ve mobilya temiz kutular olarak çıkar. Dosya küçük, Blender'da düzenlemesi kolay — kat planı ve ölçü almak için doğru seçim.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walls, doors, windows and furniture come out as clean boxes. Small file, easy to edit in Blender — the right choice for floor plans and measurements."
+          }
+        }
+      }
+    },
+    "Duvarlardan 1-2 metre uzakta dolaş": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walk 1-2 metres away from the walls"
+          }
+        }
+      }
+    },
+    "Duvarların çevresinde yavaşça dolaş — çizgiler oluştukça o yüzey yakalanıyor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walk slowly around the walls — as the lines appear, that surface is being captured"
+          }
+        }
+      }
+    },
+    "Duvarı LiDAR ölçer ama 'bu bir kapı' kararını kamera görüntüsü verir. Karanlıkta sınıflandırma çalışmaz.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LiDAR measures the wall, but the camera image is what decides \"this is a door\". Classification does not work in the dark."
+          }
+        }
+      }
+    },
+    "Döndürmek için sürükleyin, yakınlaşmak için iki parmak.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to rotate, pinch to zoom."
+          }
+        }
+      }
+    },
+    "Döner Tabla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turntable"
+          }
+        }
+      }
+    },
+    "Döner tabla kurulumu": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turntable setup"
+          }
+        }
+      }
+    },
+    "Döner tabla modu bu boyutta işe yarar: telefonu sabitleyip objeyi çevirmek daha kararlı sonuç verir. Düz, desensiz bir arka plan şart.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turntable mode works at this size: fixing the phone and rotating the object gives a more stable result. A plain, featureless background is essential."
+          }
+        }
+      }
+    },
+    "Düz tek renk": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flat single colour"
+          }
+        }
+      }
+    },
+    "Dışa Aktar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export"
+          }
+        }
+      }
+    },
+    "Dışa aktarma": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export"
+          }
+        }
+      }
+    },
+    "Etrafında dönerken ışık objeye göre sabit kalır. Objeyi çevirdiğinde gölge yüzeyin üzerinde kayar ve çözücü aynı noktayı iki karede tanıyamaz. Tek lamba yerine dağınık ışık kullan; mümkünse lambayı objeyle birlikte döndür.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you orbit, the light stays fixed relative to the object. When you rotate the object, the shading slides across its surface and the solver cannot recognise the same point in two frames. Use diffuse light instead of a single lamp; if you can, rotate the lamp with the object."
+          }
+        }
+      }
+    },
+    "Format": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Format"
+          }
+        }
+      }
+    },
+    "Fotogrametri": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photogrammetry"
+          }
+        }
+      }
+    },
+    "Fotogrametri (cihaz üstü)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photogrammetry (on-device)"
+          }
+        }
+      }
+    },
+    "Fotoğraf verisi alınamadı.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read the photo data."
+          }
+        }
+      }
+    },
+    "Fotoğraf çıktısı eklenemedi.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not add the photo output."
+          }
+        }
+      }
+    },
+    "Fotoğraflı model": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photographic model"
+          }
+        }
+      }
+    },
+    "Fotoğraflı model de üret": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also build a photographic model"
+          }
+        }
+      }
+    },
+    "Fotoğraflı model için iki tur at": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walk two loops for the photographic model"
+          }
+        }
+      }
+    },
+    "Genelde birkaç saniye sürer. Uygulamayı arka plana almayın.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usually takes a few seconds. Do not send the app to the background."
+          }
+        }
+      }
+    },
+    "Gerçek boyut": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real size"
+          }
+        }
+      }
+    },
+    "Geçici çözüm: objeye silinebilir işaretler koyun — kurşun kalem noktaları, düşük yapışkanlı bant parçaları veya üzerine desenli bir örtü. Fotogrametriye eşleşecek özellik vermek yeterli.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workaround: add removable markings to the object — pencil dots, low-tack tape, or a patterned cloth over it. Giving photogrammetry features to match is enough."
+          }
+        }
+      }
+    },
+    "Gizle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide"
+          }
+        }
+      }
+    },
+    "Görüntü": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Images"
+          }
+        }
+      }
+    },
+    "Görüntüler hazırlanıyor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing images"
+          }
+        }
+      }
+    },
+    "Görüntüleri Mac'e Aktar (.zip)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send Images to Mac (.zip)"
+          }
+        }
+      }
+    },
+    "Göğüs hizasında tut ve hafifçe aşağı-yukarı çevir; taban ve tavan birleşimlerini görmesi gerekiyor. Hızlı hareket edersen 'yavaşla' uyarısı çıkar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold it at chest height and sweep gently up and down; it needs to see where the floor and ceiling meet the walls. Move too fast and a \"slow down\" warning appears."
+          }
+        }
+      }
+    },
+    "Ham yüzey": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raw surface"
+          }
+        }
+      }
+    },
+    "Hazırlanan dosya sağ üstteki paylaş düğmesinde görünür.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The prepared file appears under the share button, top right."
+          }
+        }
+      }
+    },
+    "Hazırlanıyor…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing…"
+          }
+        }
+      }
+    },
+    "Henüz gelmedi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not available yet"
+          }
+        }
+      }
+    },
+    "Henüz görüntü yakalanmadı.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No images captured yet."
+          }
+        }
+      }
+    },
+    "Henüz tarama yok": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No scans yet"
+          }
+        }
+      }
+    },
+    "Her karede ~10° çevir, kısa bir an bekle. Sürekli döndürmek hareket bulanıklığı yapar ve eşleşmeyi bozar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotate ~10° per frame and pause briefly. Rotating continuously causes motion blur and breaks matching."
+          }
+        }
+      }
+    },
+    "Her yön çekildi. İstersen daha fazla kare topla ya da bitir.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every direction is covered. Collect more frames if you like, or finish."
+          }
+        }
+      }
+    },
+    "Hiç fotoğraf çekilmedi.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No photos were taken."
+          }
+        }
+      }
+    },
+    "Hiç geçerli derinlik örneği toplanmadı. Objeye 20–100 cm mesafede kalın.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No valid depth samples were collected. Stay 20–100 cm from the object."
+          }
+        }
+      }
+    },
+    "Hiç görüntü yakalanmadı. Taramayı tekrar deneyin.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No images were captured. Try the scan again."
+          }
+        }
+      }
+    },
+    "Işık her yönden yumuşak olsun — yoksa hizalama düşer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the light soft and from every side — otherwise alignment drops"
+          }
+        }
+      }
+    },
+    "Işık yetersiz, detay kaybolabilir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not enough light, detail may be lost"
+          }
+        }
+      }
+    },
+    "Işıklar açık olsun": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the lights on"
+          }
+        }
+      }
+    },
+    "Kamera açılamadı": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not open the camera"
+          }
+        }
+      }
+    },
+    "Kamera başlatılıyor…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting the camera…"
+          }
+        }
+      }
+    },
+    "Kamera erişimi kapalı": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera access is off"
+          }
+        }
+      }
+    },
+    "Kamera hazırlanıyor…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing the camera…"
+          }
+        }
+      }
+    },
+    "Kamera oturumu henüz başlamadı.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The camera session has not started yet."
+          }
+        }
+      }
+    },
+    "Kamera pozları çözülüyor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solving camera poses"
+          }
+        }
+      }
+    },
+    "Kamera veya derinlik sensörü yanıt vermedi.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The camera or depth sensor did not respond."
+          }
+        }
+      }
+    },
+    "Kapat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "Kaydedilemedi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not save"
+          }
+        }
+      }
+    },
+    "Kaynak Görüntüleri Sil": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Source Images"
+          }
+        }
+      }
+    },
+    "Kaynak görüntüler": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source images"
+          }
+        }
+      }
+    },
+    "Kaynak görüntüler saklanır; tam detay için kütüphaneden Mac'e aktarabilirsiniz.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source images are kept; you can send them to a Mac from the library for full detail."
+          }
+        }
+      }
+    },
+    "Kaynak görüntüler silinmiş. Tam detay için objeyi yeniden taramanız gerekiyor.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The source images were deleted. You will need to rescan the object for full detail."
+          }
+        }
+      }
+    },
+    "Kilitlenemedi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lock failed"
+          }
+        }
+      }
+    },
+    "Kilitleniyor…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locking…"
+          }
+        }
+      }
+    },
+    "Konum takibi kaybedildi. Daha dokulu bir zemin ve sabit ışık deneyin.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Position tracking was lost. Try a more textured surface and steady light."
+          }
+        }
+      }
+    },
+    "Konum takibi yok — cihazı hareket ettirin": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No position tracking — move the device"
+          }
+        }
+      }
+    },
+    "Konum takibi yok — cihazı hareket ettirip yeniden deneyin": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No position tracking — move the device and try again"
+          }
+        }
+      }
+    },
+    "Konum takibi zayıf": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Position tracking is weak"
+          }
+        }
+      }
+    },
+    "Konum yeniden bulunuyor — bu sırada veri toplanmıyor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relocalising — no data is being collected meanwhile"
+          }
+        }
+      }
+    },
+    "Konum yeniden bulunuyor — yavaş hareket edin": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relocalising — move slowly"
+          }
+        }
+      }
+    },
+    "Kullanılamıyor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unavailable"
+          }
+        }
+      }
+    },
+    "Kutuyu Sıfırla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset Box"
+          }
+        }
+      }
+    },
+    "Kütüphane": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Library"
+          }
+        }
+      }
+    },
+    "Kütüphaneden PLY olarak paylaşabilirsiniz. Mesh'e çevirme henüz eklenmedi.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can share it as PLY from the library. Mesh conversion is not implemented yet."
+          }
+        }
+      }
+    },
+    "LiDAR derinlik cihazı": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LiDAR depth device"
+          }
+        }
+      }
+    },
+    "LiDAR duvarları, kapıları, pencereleri ve mobilyayı ayrı ayrı tanır ve gerçek ölçülerle yerleştirir. Boyalı düz duvar fotogrametriyi çökertir; bu mod tam o yüzeylerde çalışır çünkü geometriyi desenden değil ölçümden alır.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LiDAR recognises walls, doors, windows and furniture separately and places them at real dimensions. A flat painted wall defeats photogrammetry; this mode works on exactly those surfaces because it takes geometry from measurement, not from pattern."
+          }
+        }
+      }
+    },
+    "LiDAR menzili yaklaşık 5 metre. Duvara yapışırsan yüzeyin tamamını göremez, çok uzaklaşırsan ölçüm zayıflar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LiDAR reaches about 5 metres. Hug the wall and it cannot see the whole surface; go too far and the measurement weakens."
+          }
+        }
+      }
+    },
+    "LiDAR • odayı dolaş • duvar, kapı, mobilya": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LiDAR • walk the room • walls, doors, furniture"
+          }
+        }
+      }
+    },
+    "LiDAR'ın gerçekten ölçtüğü yüzey üçgen ağı olarak çıkar. Girinti, çıkıntı ve dağınıklık korunur; dosya daha büyük ve geometri düzensiz olur.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The surface LiDAR actually measured, as a triangle mesh. Recesses, protrusions and clutter are preserved; the file is larger and the geometry irregular."
+          }
+        }
+      }
+    },
+    "Mac tarafında ne yapmalı?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What to do on the Mac?"
+          }
+        }
+      }
+    },
+    "Maskeli işleme başarısız oldu, maskesiz tekrar denendi.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masked processing failed; retried without the mask."
+          }
+        }
+      }
+    },
+    "Mat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matte"
+          }
+        }
+      }
+    },
+    "Mat ve dokulu yüzey fotogrametrinin en iyi çalıştığı durum. Bu objede geometri detayı TrueDepth'ten belirgin şekilde yüksek olur.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A matte, textured surface is where photogrammetry works best. On this object the geometric detail will be clearly higher than TrueDepth's."
+          }
+        }
+      }
+    },
+    "Mesh çıkarılıyor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extracting mesh"
+          }
+        }
+      }
+    },
+    "Mimari": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Architectural"
+          }
+        }
+      }
+    },
+    "Mobilya tanınmış kutular olarak gelir — koltuğun detaylı mesh'i çıkmaz. Detaylı obje için Fotogrametri modu.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Furniture arrives as recognised boxes — you will not get a detailed mesh of the sofa. Use Photogrammetry for a detailed object."
+          }
+        }
+      }
+    },
+    "Mod": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mode"
+          }
+        }
+      }
+    },
+    "Model dosyası bulunamadı.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model file not found."
+          }
+        }
+      }
+    },
+    "Model gerçek metre cinsinden çıkar; kütüphanede oda ölçülerini görürsünüz.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model comes out in real metres; you can see the room dimensions in the library."
+          }
+        }
+      }
+    },
+    "Model oluşturulamadı": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not build the model"
+          }
+        }
+      }
+    },
+    "Model oluşturuluyor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Building model"
+          }
+        }
+      }
+    },
+    "Model optimize ediliyor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optimising model"
+          }
+        }
+      }
+    },
+    "Modeller ve kaynak görüntüler kalıcı olarak silinir. Bu geri alınamaz.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Models and source images are permanently deleted. This cannot be undone."
+          }
+        }
+      }
+    },
+    "Nokta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Points"
+          }
+        }
+      }
+    },
+    "Nokta bulutu / mesh, geometri odaklı araçlar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Point cloud / mesh, for geometry-focused tools."
+          }
+        }
+      }
+    },
+    "Nokta bulutu PLY olarak kaydedildi. Mesh'e çevirme (marching cubes) sonraki artımda gelecek.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The point cloud was saved as PLY. Mesh conversion (marching cubes) comes in a later increment."
+          }
+        }
+      }
+    },
+    "Nokta bulutu boş — kaydedilecek veri yok.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The point cloud is empty — nothing to save."
+          }
+        }
+      }
+    },
+    "Nokta bulutu boş.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The point cloud is empty."
+          }
+        }
+      }
+    },
+    "Nokta bulutu kaydedildi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Point cloud saved"
+          }
+        }
+      }
+    },
+    "Nokta bulutu oluşturuluyor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Building point cloud"
+          }
+        }
+      }
+    },
+    "Nokta bulutu yazılıyor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Writing point cloud"
+          }
+        }
+      }
+    },
+    "Obje düz ve desensiz. Fotogrametri geometriyi yüzey deseninden türetir, desen yoksa mesh yumuşayıp detay kaybolur. TrueDepth aktif IR aydınlatma yaptığı için görünümden bağımsız ölçüm alır.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The object is flat and featureless. Photogrammetry derives geometry from surface pattern, and without pattern the mesh softens and detail is lost. TrueDepth uses active IR illumination, so it measures independently of appearance."
+          }
+        }
+      }
+    },
+    "Object Capture bu cihazda desteklenmiyor. LiDAR'lı bir iPhone/iPad Pro gerekiyor.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Object Capture is not supported on this device. A LiDAR-equipped iPhone or iPad Pro is required."
+          }
+        }
+      }
+    },
+    "Objenin etrafında yavaşça dönün": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbit slowly around the object"
+          }
+        }
+      }
+    },
+    "Objeye yaklaşın": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move closer to the object"
+          }
+        }
+      }
+    },
+    "Objeyi 20–100 cm mesafede tutup yavaşça tarayın": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the object 20–100 cm away and scan slowly"
+          }
+        }
+      }
+    },
+    "Objeyi Kilitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lock Object"
+          }
+        }
+      }
+    },
+    "Objeyi adım adım döndür": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotate the object step by step"
+          }
+        }
+      }
+    },
+    "Objeyi dokulu bir zemine koyup kadrajı sıkı tutun; çok küçük parçalar için masaüstü tarayıcı gerekir.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Place the object on a textured surface and frame it tightly; very small parts need a desktop scanner."
+          }
+        }
+      }
+    },
+    "Objeyi geçici olarak matlaştırın — talk pudrası, kuru şampuan veya mat tarama spreyi belirgin fark yaratır.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temporarily dull the object — talcum powder, dry shampoo or matte scanning spray makes a clear difference."
+          }
+        }
+      }
+    },
+    "Objeyi kadraja alın": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bring the object into frame"
+          }
+        }
+      }
+    },
+    "Objeyi kadrajın ortasına alıp kilitleyin: masa ve arka plan elenir, ölçüler objenin olur.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Centre the object in the frame and lock it: the table and background are excluded, and the dimensions become the object's."
+          }
+        }
+      }
+    },
+    "Objeyi kutunun içine alın": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fit the object inside the box"
+          }
+        }
+      }
+    },
+    "Objeyi tanımlayın": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Describe the object"
+          }
+        }
+      }
+    },
+    "Objeyi ~10° çevirip çekin": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotate the object ~10° and shoot"
+          }
+        }
+      }
+    },
+    "Objeyi Çevireyim": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let Me Flip It"
+          }
+        }
+      }
+    },
+    "Oda": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Room"
+          }
+        }
+      }
+    },
+    "Oda modeli birkaç saniye, ardından fotoğraflı model birkaç dakika sürer. Uygulamayı arka plana almayın.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The room model takes a few seconds, then the photographic model takes a few minutes. Do not send the app to the background."
+          }
+        }
+      }
+    },
+    "Oda modeli oluşturulamadı": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not build the room model"
+          }
+        }
+      }
+    },
+    "Oda modeli oluşturuluyor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Building room model"
+          }
+        }
+      }
+    },
+    "Oda taraması": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Room scan"
+          }
+        }
+      }
+    },
+    "Oda taraması (RoomPlan)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Room scanning (RoomPlan)"
+          }
+        }
+      }
+    },
+    "Oda taraması LiDAR gerektiriyor; bu cihaz desteklemiyor.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Room scanning requires LiDAR, which this device does not have."
+          }
+        }
+      }
+    },
+    "Oda taraması başarısız": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Room scan failed"
+          }
+        }
+      }
+    },
+    "Oda taraması başlatılamadı": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not start the room scan"
+          }
+        }
+      }
+    },
+    "Odak Kilitli": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focus Locked"
+          }
+        }
+      }
+    },
+    "Odanın yapısını çıkarır": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captures the room's structure"
+          }
+        }
+      }
+    },
+    "Odanın çevresini kesintisiz dolaşıp başladığın yere dön. Yarım tur kalan duvarları eksik bırakır.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walk the room's perimeter without stopping and return to where you started. Half a loop leaves the remaining walls incomplete."
+          }
+        }
+      }
+    },
+    "Odağı Kilitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lock Focus"
+          }
+        }
+      }
+    },
+    "Ortam çok karanlık — ışık ekleyin": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too dark — add light"
+          }
+        }
+      }
+    },
+    "Ortamda yeterli doku yok — dokulu bir zemin kullanın": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not enough texture in the environment — use a textured surface"
+          }
+        }
+      }
+    },
+    "Otomatik Çekim": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto Capture"
+          }
+        }
+      }
+    },
+    "Otomatik çekim açık — objeyi yavaşça döndürmeye devam edin": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto capture is on — keep rotating the object slowly"
+          }
+        }
+      }
+    },
+    "Otomatiği Durdur": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop Auto"
+          }
+        }
+      }
+    },
+    "Oturum duraklatılamadı. Bitirip modeli oluşturmayı deneyin.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not pause the session. Try finishing and building the model."
+          }
+        }
+      }
+    },
+    "Oturum model üretmeden sona erdi.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The session ended without producing a model."
+          }
+        }
+      }
+    },
+    "PLY başlığı okunamadı.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read the PLY header."
+          }
+        }
+      }
+    },
+    "PLY dosyası eksik.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The PLY file is incomplete."
+          }
+        }
+      }
+    },
+    "PLY'yi Paylaş": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share PLY"
+          }
+        }
+      }
+    },
+    "Parlak / metalik": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glossy / metallic"
+          }
+        }
+      }
+    },
+    "Parlak ve metalik yüzeyler her iki yöntemi de zorlar: yansıma açıyla değiştiği için eşleşme kurulamaz.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glossy and metallic surfaces defeat both methods: the reflection changes with angle, so no match can be established."
+          }
+        }
+      }
+    },
+    "RoomPlan hiç renk üretmiyor — çıktısı tasarım gereği sadece geometri, o yüzden gri. Bu seçenek yürürken kamera kareleri de toplar ve onlardan **ikinci bir model** çıkarır: dokulu, gerçek görünümlü. Kütüphaneye iki kayıt olarak düşer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RoomPlan produces no colour at all — its output is geometry by design, which is why it looks grey. This option also collects camera frames as you walk and builds a **second model** from them: textured, true to life. Both land in the library as separate records."
+          }
+        }
+      }
+    },
+    "RoomPlan'in sahne boyut sınırı var. Ev taramak için odaları ayrı ayrı tarayıp modelleri birlikte kullan.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RoomPlan has a scene size limit. To scan a home, scan each room separately and use the models together."
+          }
+        }
+      }
+    },
+    "Sadece kilitli bölge birikiyor — masa ve arka plan dışarıda.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the locked region accumulates — the table and background are excluded."
+          }
+        }
+      }
+    },
+    "Sarı çerçeveyi objenin üzerine yerleştir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Place the yellow frame over the object"
+          }
+        }
+      }
+    },
+    "Sensör başlatılıyor…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting the sensor…"
+          }
+        }
+      }
+    },
+    "Sensörler hazırlanıyor…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing sensors…"
+          }
+        }
+      }
+    },
+    "Seç": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select"
+          }
+        }
+      }
+    },
+    "Seçimi Kaldır": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deselect All"
+          }
+        }
+      }
+    },
+    "Seçin": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select"
+          }
+        }
+      }
+    },
+    "Sil": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        }
+      }
+    },
+    "Sürükleyerek taşı, iki parmakla boyutlandır. Sadece çerçevenin içi modellenir — masa, kâğıt ve arka plan tamamen dışlanır. Telefon sabit olduğu için tek çerçeve bütün kareler için geçerli.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to move it, pinch to resize. Only the inside of the frame is modelled — the table, paper and background are excluded entirely. Because the phone stays still, one frame applies to every shot."
+          }
+        }
+      }
+    },
+    "Takip başlatılıyor…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting tracking…"
+          }
+        }
+      }
+    },
+    "Takip zayıf": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tracking is weak"
+          }
+        }
+      }
+    },
+    "Tam detay": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full detail"
+          }
+        }
+      }
+    },
+    "Tamam": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "Tara": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan"
+          }
+        }
+      }
+    },
+    "Tara sekmesinden ilk taramanızı yapın.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make your first scan from the Scan tab."
+          }
+        }
+      }
+    },
+    "Tarama başarısız": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan failed"
+          }
+        }
+      }
+    },
+    "Tarama bulunamadı": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan not found"
+          }
+        }
+      }
+    },
+    "Tarama hazır": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan ready"
+          }
+        }
+      }
+    },
+    "Tarama için Ayarlar > ObjectScanner üzerinden kamera erişimini açın.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable camera access in Settings > ObjectScanner to scan."
+          }
+        }
+      }
+    },
+    "Taramaya Başla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Scanning"
+          }
+        }
+      }
+    },
+    "Taramaya Dön": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to Scan"
+          }
+        }
+      }
+    },
+    "Taramayı Başlat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Scan"
+          }
+        }
+      }
+    },
+    "Taramayı iptal et": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel the scan"
+          }
+        }
+      }
+    },
+    "Taramayı iptal et?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel the scan?"
+          }
+        }
+      }
+    },
+    "Tarih": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date"
+          }
+        }
+      }
+    },
+    "Tek seferde tek oda. Ev için odaları ayrı ayrı tarayın.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One room at a time. For a home, scan each room separately."
+          }
+        }
+      }
+    },
+    "Tek yörünge çektiniz. Bitirdikten sonra bu taramaya geçiş eklenemez — alt yüzü istiyorsanız şimdi çevirmeniz gerekiyor.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You shot a single orbit. No pass can be added to this scan after finishing — if you want the underside, you have to flip it now."
+          }
+        }
+      }
+    },
+    "Tek yükseklikten çekilen kareler tek bir halka oluşturur ve dikey paralaks vermez; üst yüzeyler bu yüzden yumuşar. Bir turu bitirince telefonun yüksekliğini/açısını değiştirip bir tur daha çek. Alt yüz için objeyi ters çevirip tekrarla.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frames from a single height form one ring and give no vertical parallax, which is why the top surfaces soften. When a turn is done, change the phone's height or angle and shoot another. For the underside, flip the object and repeat."
+          }
+        }
+      }
+    },
+    "Telefonu duvara doğru tut, yavaşça süpür": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold the phone toward the wall and sweep slowly"
+          }
+        }
+      }
+    },
+    "Texture yerleştiriliyor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapping texture"
+          }
+        }
+      }
+    },
+    "Tripod veya bir desteğe yasla. Çekim sırasında telefona dokunma.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use a tripod or lean it against something. Do not touch the phone while shooting."
+          }
+        }
+      }
+    },
+    "TrueDepth sensörü": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TrueDepth sensor"
+          }
+        }
+      }
+    },
+    "TrueDepth sensörü bulunamadı.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No TrueDepth sensor found."
+          }
+        }
+      }
+    },
+    "Tümünü Seç": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select All"
+          }
+        }
+      }
+    },
+    "Ultra geniş kamera": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultra-wide camera"
+          }
+        }
+      }
+    },
+    "Uygulamayı arka plana almayın — iOS işlemi askıya alır.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not send the app to the background — iOS will suspend the work."
+          }
+        }
+      }
+    },
+    "Uygulamayı arka plana almayın.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not send the app to the background."
+          }
+        }
+      }
+    },
+    "Vazgeç": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "Yansıma LiDAR'ı yanıltır; aynanın arkasında olmayan bir oda çıkabilir. Mümkünse o duvarı biraz uzaktan geç.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reflections mislead LiDAR; you can end up with a room that does not exist behind the mirror. If you can, pass that wall from a distance."
+          }
+        }
+      }
+    },
+    "Yapı modeli": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Structure model"
+          }
+        }
+      }
+    },
+    "Yarı parlak": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satin"
+          }
+        }
+      }
+    },
+    "Yatay aynala": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mirror horizontally"
+          }
+        }
+      }
+    },
+    "Yaygın değişim formatı. Blender, MeshLab, ZBrush.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Common interchange format. Blender, MeshLab, ZBrush."
+          }
+        }
+      }
+    },
+    "Yeni Tarama": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Scan"
+          }
+        }
+      }
+    },
+    "Yeni Yörünge": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Orbit"
+          }
+        }
+      }
+    },
+    "Yeniden yapılandırma": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconstruction"
+          }
+        }
+      }
+    },
+    "Yine de Bitir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish Anyway"
+          }
+        }
+      }
+    },
+    "Yoğunluk": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Density"
+          }
+        }
+      }
+    },
+    "Yörünge tamamlandı": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbit complete"
+          }
+        }
+      }
+    },
+    "Yüzey": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish"
+          }
+        }
+      }
+    },
+    "Yüzeyde eşleşmeye yetecek kadar detay var; fotogrametri bu objede iyi sonuç verir.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There is enough surface detail to match on; photogrammetry will do well on this object."
+          }
+        }
+      }
+    },
+    "dokulu · ölçeksiz": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "textured · no scale"
+          }
+        }
+      }
+    },
+    "duvar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "walls"
+          }
+        }
+      }
+    },
+    "dış halka duvar · iç halka zemin": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "outer ring walls · inner ring floor"
+          }
+        }
+      }
+    },
+    "en az %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "at least %lld"
+          }
+        }
+      }
+    },
+    "gecikme %@ ms · atılan %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lag %@ ms · dropped %lld"
+          }
+        }
+      }
+    },
+    "gerçek ölçülerde · renksiz": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "real dimensions · no colour"
+          }
+        }
+      }
+    },
+    "geçici çözüm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "workaround"
+          }
+        }
+      }
+    },
+    "iOS SDK'sı cihaz üstü fotogrametride yalnızca `reduced` seviyesini sunuyor. `medium` / `full` / `raw` sadece macOS'ta mevcut.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The iOS SDK offers only the `reduced` level for on-device photogrammetry. `medium` / `full` / `raw` exist on macOS only."
+          }
+        }
+      }
+    },
+    "iOS cihaz üstü fotogrametride tek desteklenen seviye. Daha yüksek poligon için kaynak görüntüleri Mac'e aktarın.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The only level iOS supports for on-device photogrammetry. For a higher polygon count, move the source images to a Mac."
+          }
+        }
+      }
+    },
+    "obje": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "object"
+          }
+        }
+      }
+    },
+    "sanal": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "virtual"
+          }
+        }
+      }
+    },
+    "yaklaşık %lld dakika": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "about %lld minutes"
+          }
+        }
+      }
+    },
+    "·": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "·"
+          }
+        }
+      }
+    },
+    "· %lld bulanık": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "· %lld blurry"
+          }
+        }
+      }
+    },
+    "Çalışma klasörü boş değil. Uygulamayı yeniden başlatın.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The working folder is not empty. Restart the app."
+          }
+        }
+      }
+    },
+    "Çekim iyi: kareler hizalandı. Kalitenin düşük kalmasının sebebi çekim değil, cihaz üstü `reduced` seviyesi — oda ölçeğinde ~25.000 üçgen ve tek texture bütün yüzeye yayılıyor. Bir obje için bol, bir oda için çok az. Kareler saklandı: Mac'te `.raw` ile yeniden işlemek tek gerçek çözüm.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The capture is good: the frames aligned. The quality ceiling is not the capture but the on-device `reduced` level — at room scale its ~25,000 triangles and single texture are spread over every surface. Plenty for one object, far too little for a room. The frames are kept: reprocessing with `.raw` on a Mac is the only real fix."
+          }
+        }
+      }
+    },
+    "Çerçeve işi çözüyor ama kenarları objeye çok yakınsa yardımcı olur: mümkünse arka planı biraz geriye al, yan yana kâğıt yerine tek parça bir fon kullan.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The frame solves it, but it helps when its edges are not right against the object: if you can, move the background back a little and use a single-piece backdrop rather than sheets side by side."
+          }
+        }
+      }
+    },
+    "Çevir + Devam": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flip + Continue"
+          }
+        }
+      }
+    },
+    "Çok hızlı hareket — yavaşlayın": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moving too fast — slow down"
+          }
+        }
+      }
+    },
+    "Çok uzak — objeye yaklaşın": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too far — move closer to the object"
+          }
+        }
+      }
+    },
+    "Çok yakın — sensör ölçemiyor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too close — the sensor cannot measure"
+          }
+        }
+      }
+    },
+    "Çözücünün turu kapatabilmesi için en az %lld fotoğraf gerekiyor.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The solver needs at least %lld photos to close the loop."
+          }
+        }
+      }
+    },
+    "Çıktı": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Output"
+          }
+        }
+      }
+    },
+    "Ölçek": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scale"
+          }
+        }
+      }
+    },
+    "Ölçeksiz": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No scale"
+          }
+        }
+      }
+    },
+    "Ölçeksiz — derinlik verisi yoktu": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No scale — there was no depth data"
+          }
+        }
+      }
+    },
+    "Ön sensör • desensiz yüzeylerde bile ölçüm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Front sensor • measures even featureless surfaces"
+          }
+        }
+      }
+    },
+    "Öneri": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommendation"
+          }
+        }
+      }
+    },
+    "Öneriyi geçersiz kılabilirsiniz. **beta** işaretli modlar çalışır ama güvenilir değil: sonuç objeye ve ortama göre belirgin şekilde değişir.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can override the recommendation. Modes marked **beta** work but are not dependable: results vary noticeably with the object and the environment."
+          }
+        }
+      }
+    },
+    "Ön↔arka kalibrasyon (hibrit için)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Front↔rear calibration (for hybrid)"
+          }
+        }
+      }
+    },
+    "çekinceli": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "qualified"
+          }
+        }
+      }
+    },
+    "önerilen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "recommended"
+          }
+        }
+      }
+    },
+    "İdeal mesafe": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ideal distance"
+          }
+        }
+      }
+    },
+    "İptal Et ve Çık": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel and Exit"
+          }
+        }
+      }
+    },
+    "İsim": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        }
+      }
+    },
+    "İçerik": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contents"
+          }
+        }
+      }
+    },
+    "İşlem başarısız": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Operation failed"
+          }
+        }
+      }
+    },
+    "Şu ana kadar taranan oda silinecek.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The room scanned so far will be deleted."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
