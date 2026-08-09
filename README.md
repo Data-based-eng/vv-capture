@@ -141,7 +141,9 @@ the room, not at the screen.
 
 ## What actually determines quality
 
-Measured on device, not inferred.
+Measured on device, not inferred. Summarised here — the full write-up, including how to
+reproduce each measurement, is in
+**[docs/what-limits-quality.md](docs/what-limits-quality.md)**.
 
 ### Surface appearance decides the technique
 
