@@ -18,22 +18,17 @@ English translations. Comments and documentation are English throughout.
 
 ## Demo
 
-<table>
-<tr>
-<td align="center" width="50%">
-<a href="docs/demo-object-scan.mp4"><img src="docs/demo-object-scan.jpg" width="290" alt="Object scan"></a>
-<br><b>Object scan</b>
-<br><sub>orbiting a controller · <a href="docs/demo-object-scan.mp4">play (8 MB)</a></sub>
-</td>
-<td align="center" width="50%">
-<a href="docs/demo-room-scan.mp4"><img src="docs/demo-room-scan.jpg" width="290" alt="Room scan"></a>
-<br><b>Room scan</b>
-<br><sub>walls, doors and furniture · <a href="docs/demo-room-scan.mp4">play (9 MB)</a></sub>
-</td>
-</tr>
-</table>
+Two screen recordings on an iPhone 16 Pro Max, one per technique.
 
-Screen recordings on an iPhone 16 Pro Max. Click a frame to play it.
+**Object scan** — placing the bounding box, then orbiting a controller
+
+https://github.com/user-attachments/assets/07cec01f-a252-463c-8efb-efe799beba40
+
+**Room scan** — walls, doors and furniture, with the architectural/mesh choice
+
+https://github.com/user-attachments/assets/089f6fd2-3ec4-4143-8409-5e9a073130e6
+
+Both clips are also committed under [`docs/`](docs) so they survive in a clone.
 
 ---
 
