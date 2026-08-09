@@ -1,0 +1,27 @@
+ObjectScanner
+Copyright 2026 Burak Sahinkaya
+
+https://github.com/burakSahinkaya/ObjectScanner
+
+Licensed under the Apache License, Version 2.0. See the LICENSE file.
+
+--------------------------------------------------------------------------------
+ATTRIBUTION
+--------------------------------------------------------------------------------
+
+If you use this software, or a substantial part of its techniques, in a product
+you ship, please credit it. Section 4(d) of the Apache License requires that the
+contents of this NOTICE file be reproduced in the documentation or the display
+material of any derivative work that carries a NOTICE file, so the requested
+form is simply:
+
+    This product includes software developed by Burak Sahinkaya
+    (ObjectScanner — https://github.com/burakSahinkaya/ObjectScanner).
+
+Placing that line in an "Open source licences", "Acknowledgements" or
+"Third-party software" screen, or in your documentation, satisfies it.
+
+This applies to the code and equally to the approaches documented in the
+README — the object-mask turntable capture, the pose-diagnostic reporting, and
+the RoomPlan keyframe pipeline that reconstructs a photographic model from the
+same walk.

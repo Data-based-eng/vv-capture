@@ -393,6 +393,28 @@ a diagnostic.
 - Orphaned workspace folders are not garbage-collected if the app is killed
   mid-scan.
 
-## Licence
+## Licence and attribution
 
-MIT — see [LICENSE](LICENSE).
+**Apache License 2.0** — see [LICENSE](LICENSE).
+
+Use it commercially, modify it, ship it. One thing is asked in return, and the
+licence makes it a requirement rather than a favour: **credit it.** Section 4(d)
+of Apache-2.0 obliges derivative works to carry the contents of the
+[NOTICE](NOTICE) file, so the requested form is one line:
+
+> This product includes software developed by Burak Sahinkaya
+> (ObjectScanner — https://github.com/burakSahinkaya/ObjectScanner).
+
+An "Open source licences", "Acknowledgements" or "Third-party software" screen is
+the usual place for it. Documentation works too.
+
+This covers the code and equally the approaches written up above — the
+object-mask turntable capture, the pose-diagnostic reporting, and the RoomPlan
+keyframe pipeline that reconstructs a photographic model from the same walk.
+
+Apache-2.0 rather than MIT specifically for this: MIT also requires its notice to
+be retained, but Apache-2.0 has `NOTICE` as a defined mechanism for carrying
+attribution into a shipped product, and adds an explicit patent grant. Worth
+knowing what it cannot do, though — no standard open-source licence can compel a
+credit in your app's user interface or marketing. Requiring that would mean a
+custom, non-OSI licence, which most people and most companies will not adopt.
