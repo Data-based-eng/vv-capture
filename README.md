@@ -21,20 +21,19 @@ English translations. Comments and documentation are English throughout.
 <table>
 <tr>
 <td align="center" width="50%">
-<video src="docs/demo-object-scan.mp4" width="290" controls muted></video>
-<br><sub><b>Object scan</b> · orbiting a controller</sub>
-<br><sub><a href="docs/demo-object-scan.mp4">download the clip</a></sub>
+<a href="docs/demo-object-scan.mp4"><img src="docs/demo-object-scan.jpg" width="290" alt="Object scan"></a>
+<br><b>Object scan</b>
+<br><sub>orbiting a controller · <a href="docs/demo-object-scan.mp4">play (8 MB)</a></sub>
 </td>
 <td align="center" width="50%">
-<video src="docs/demo-room-scan.mp4" width="290" controls muted></video>
-<br><sub><b>Room scan</b> · walls, doors and furniture</sub>
-<br><sub><a href="docs/demo-room-scan.mp4">download the clip</a></sub>
+<a href="docs/demo-room-scan.mp4"><img src="docs/demo-room-scan.jpg" width="290" alt="Room scan"></a>
+<br><b>Room scan</b>
+<br><sub>walls, doors and furniture · <a href="docs/demo-room-scan.mp4">play (9 MB)</a></sub>
 </td>
 </tr>
 </table>
 
-Both clips are screen recordings on an iPhone 16 Pro Max. The download links are the
-fallback for renderers that strip the `<video>` element.
+Screen recordings on an iPhone 16 Pro Max. Click a frame to play it.
 
 ---
 
