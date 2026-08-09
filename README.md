@@ -16,6 +16,28 @@ English translations. Comments and documentation are English throughout.
 
 ---
 
+## Demo
+
+<table>
+<tr>
+<td align="center" width="50%">
+<video src="docs/demo-object-scan.mp4" width="290" controls muted></video>
+<br><sub><b>Object scan</b> · orbiting a controller</sub>
+<br><sub><a href="docs/demo-object-scan.mp4">download the clip</a></sub>
+</td>
+<td align="center" width="50%">
+<video src="docs/demo-room-scan.mp4" width="290" controls muted></video>
+<br><sub><b>Room scan</b> · walls, doors and furniture</sub>
+<br><sub><a href="docs/demo-room-scan.mp4">download the clip</a></sub>
+</td>
+</tr>
+</table>
+
+Both clips are screen recordings on an iPhone 16 Pro Max. The download links are the
+fallback for renderers that strip the `<video>` element.
+
+---
+
 ## Requirements
 
 | | |
