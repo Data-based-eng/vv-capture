@@ -1,4 +1,8 @@
-# ObjectScanner
+<p align="center">
+  <img src="docs/icon.png" width="120" alt="ObjectScanner icon">
+</p>
+
+<h1 align="center">ObjectScanner</h1>
 
 An iOS app for 3D-scanning real objects and rooms with an iPhone's own sensors. Four
 capture modes, one shared output contract, and an honest account of where each one

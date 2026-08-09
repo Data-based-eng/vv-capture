@@ -1,28 +1,52 @@
 {
-  "sourceLanguage": "tr",
-  "strings": {
-    "ObjectScanner": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ObjectScanner"
+  "sourceLanguage" : "tr",
+  "strings" : {
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "ObjectScanner"
           }
         }
       }
     },
-    "Objeleri 3B taramak icin kameraya erisim gerekiyor.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Camera access is required to scan objects in 3D."
+    "NSCameraUsageDescription" : {
+      "comment" : "Privacy - Camera Usage Description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Objeleri 3B taramak icin kameraya erisim gerekiyor."
+          }
+        }
+      }
+    },
+    "ObjectScanner" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ObjectScanner"
+          }
+        }
+      }
+    },
+    "Objeleri 3B taramak icin kameraya erisim gerekiyor." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera access is required to scan objects in 3D."
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }
