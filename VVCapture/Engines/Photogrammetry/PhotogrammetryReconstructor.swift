@@ -95,7 +95,14 @@ struct PhotogrammetryReconstructor {
                 framing: framing,
                 onProgress: onProgress
             )
-        } catch where effectiveMask != nil {
+        } catch {
+            if error is CancellationError { throw error }
+            if case ScanEngineError.cancelled = error {
+                // Cancellation is a decision, not a failure mode: retrying
+                // unmasked would do the opposite of what was asked.
+                throw error
+            }
+            guard effectiveMask != nil else { throw error }
             // Masking is an optimisation, not the point. If the masked run fails for
             // any reason, fall back to the plain folder path so the user still gets a
             // model instead of nothing.

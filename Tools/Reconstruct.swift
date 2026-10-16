@@ -109,7 +109,7 @@ struct Reconstruct {
                     exit(0)
 
                 case .requestError(_, let error):
-                    FileHandle.standardError.write(Data("Hata: \(error)\n".utf8))
+                    FileHandle.standardError.write(Data("Error: \(error)\n".utf8))
                     exit(1)
 
                 case .processingCancelled:
@@ -171,7 +171,7 @@ struct Reconstruct {
     private static func reportSize(of url: URL) {
         guard let size = try? FileManager.default
             .attributesOfItem(atPath: url.path)[.size] as? Int64 else { return }
-        print("Dosya boyutu: \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
+        print("File size: \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))")
     }
 }
 

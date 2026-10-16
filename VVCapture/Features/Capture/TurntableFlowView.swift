@@ -430,12 +430,15 @@ private struct TurntableOverlay: View {
     private func finish() {
         isFinishing = true
         Task {
+            defer { isFinishing = false }
             do {
                 _ = try await engine.finish()
             } catch {
+                // A cancel that lands mid-finish resolves through the .cancelled
+                // phase; surfacing it as a failure alert would be wrong.
+                if case ScanEngineError.cancelled = error { return }
                 finishError = error.localizedDescription
             }
-            isFinishing = false
         }
     }
 }

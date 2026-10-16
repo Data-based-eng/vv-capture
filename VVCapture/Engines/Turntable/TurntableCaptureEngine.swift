@@ -103,6 +103,11 @@ final class TurntableCaptureEngine: ScanEngine {
     private var workspace: ScanWorkspace?
     private var yawManifest: YawManifest?
     private var autoCaptureTask: Task<Void, Never>?
+    /// Set by `cancel()`. `finish()` checks it at every await boundary so a
+    /// cancel that lands mid-reconstruction produces `.cancelled` — never a
+    /// `.failed` for a workspace that was deliberately discarded, and never a
+    /// committed record for one.
+    private var isCancelled = false
 
     init(storage: ScanStorage) {
         self.storage = storage
@@ -169,6 +174,17 @@ final class TurntableCaptureEngine: ScanEngine {
         stopAutoCapture()
         coordinator.stop()
 
+        // A photo whose delegate hasn't fired yet must not land after the
+        // reconstruction input was enumerated — or after teardown, with no yaw
+        // entry at all. Wait for the in-flight captures first.
+        await coordinator.drainPendingCaptures()
+
+        // A cancel may have landed while draining, and a second finish must not
+        // reconstruct twice.
+        guard !isCancelled, case .capturing = phase else {
+            throw ScanEngineError.cancelled
+        }
+
         guard shotCount > 0 else {
             phase = .failed(message: String(localized: "No photos were taken."))
             throw ScanEngineError.noImagesCaptured
@@ -190,8 +206,24 @@ final class TurntableCaptureEngine: ScanEngine {
                 self?.phase = .reconstructing(progress)
             }
         } catch {
+            // A cancel that lands mid-reconstruction must win over the failure:
+            // the workspace is being discarded, so staying cancelled and
+            // committing nothing is the only consistent outcome.
+            if isCancelled {
+                storage.discard(workspace)
+                teardown()
+                phase = .cancelled
+                throw ScanEngineError.cancelled
+            }
             phase = .failed(message: error.localizedDescription)
             throw error
+        }
+
+        if isCancelled {
+            storage.discard(workspace)
+            teardown()
+            phase = .cancelled
+            throw ScanEngineError.cancelled
         }
 
         // Appended after the reconstruction warnings so the result screen reads
@@ -219,12 +251,19 @@ final class TurntableCaptureEngine: ScanEngine {
     }
 
     func cancel() {
+        isCancelled = true
         stopAutoCapture()
         coordinator?.stop()
-        teardown()
-        if let workspace {
-            storage.discard(workspace)
-            self.workspace = nil
+        // During reconstruction the solver still owns the workspace directory;
+        // deleting it now would corrupt the in-flight session. finish()
+        // observes isCancelled at its next await boundary, discards the
+        // workspace, and leaves the phase cancelled.
+        if case .capturing = phase {
+            teardown()
+            if let workspace {
+                storage.discard(workspace)
+                self.workspace = nil
+            }
         }
         phase = .cancelled
     }
@@ -246,10 +285,12 @@ final class TurntableCaptureEngine: ScanEngine {
     }
 
     func captureNow() {
+        guard case .capturing = phase else { return }
         coordinator?.capture()
     }
 
     func toggleAutoCapture() {
+        guard case .capturing = phase else { return }
         isAutoCapturing ? stopAutoCapture() : startAutoCapture()
     }
 

@@ -98,7 +98,7 @@ enum MeshExporter {
         try await Task.detached(priority: .userInitiated) {
             let asset = MDLAsset(url: sourceURL)
             guard asset.count > 0 else {
-                throw MeshExportError.conversionFailed("Kaynak modelde geometri yok.")
+                throw MeshExportError.conversionFailed("The source model contains no geometry.")
             }
             do {
                 try asset.export(to: destination)

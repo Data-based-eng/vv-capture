@@ -44,6 +44,9 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
     /// `AVCapturePhotoOutput` expects, since it only holds the delegate weakly.
     private var pendingCaptures: [Int64: PhotoDelegate] = [:]
     private let pendingLock = NSLock()
+    /// Captures handed to the photo output whose delegate has not reported back
+    /// yet. Guarded by `pendingLock`.
+    private var pendingCount = 0
 
     private var shotIndex = 0
 
@@ -145,6 +148,22 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
             guard let self, self.session.isRunning else { return }
             self.session.stopRunning()
         }
+    }
+
+    /// Resolves once every in-flight capture has reported back.
+    ///
+    /// `finish()` waits on this before reconstructing: without it, a photo whose
+    /// delegate fires after teardown would land on disk with no yaw entry, and a
+    /// photo landing mid-reconstruction would miss the solver's input enumeration.
+    /// Bounded — a delegate that never fires must not hang the finish path.
+    func drainPendingCaptures() async {
+        let deadline = Date().addingTimeInterval(15)
+        while Date() < deadline {
+            if pendingLock.withLock({ pendingCount }) == 0 { return }
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        let stuck = pendingLock.withLock { pendingCount }
+        Self.logger.error("Timed out waiting for in-flight captures: \(stuck, privacy: .public) remaining")
     }
 
     // MARK: - Locking
@@ -253,16 +272,25 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
             // `Sendable`, but its id is a plain `Int64`.
             let settingsID = settings.uniqueID
 
+            // The photo output invokes this on its own callback queue, while
+            // `capture()` runs on `sessionQueue`: funnel the result through
+            // `sessionQueue` so `shotIndex` and `bestSharpness` are only ever
+            // touched on one thread.
             let delegate = PhotoDelegate(destination: destination, takenAt: takenAt) { [weak self] result in
                 guard let self else { return }
-                self.pendingLock.lock()
-                self.pendingCaptures[settingsID] = nil
-                self.pendingLock.unlock()
-                self.handle(result: result, index: index, destination: destination)
+                self.sessionQueue.async { [weak self] in
+                    guard let self else { return }
+                    self.pendingLock.lock()
+                    self.pendingCaptures[settingsID] = nil
+                    self.pendingCount -= 1
+                    self.pendingLock.unlock()
+                    self.handle(result: result, index: index, destination: destination)
+                }
             }
 
             self.pendingLock.lock()
             self.pendingCaptures[settingsID] = delegate
+            self.pendingCount += 1
             self.pendingLock.unlock()
 
             self.photoOutput.capturePhoto(with: settings, delegate: delegate)
@@ -285,9 +313,11 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
 
             if sharpness < bestSharpness * sharpnessFloor {
                 // Discarded on purpose: a soft frame contributes wrong matches, and
-                // the auto-capture loop will cover this angle again shortly.
+                // the auto-capture loop will cover this angle again shortly. The
+                // index is deliberately NOT reused — with captures in flight, a
+                // reused number could be handed to two different shots and one file
+                // would overwrite the other. Gaps in the numbering are harmless.
                 try? FileManager.default.removeItem(at: destination)
-                shotIndex -= 1
                 Self.logger.debug("Blurry frame dropped: \(sharpness, privacy: .public) / \(self.bestSharpness, privacy: .public)")
                 onShotRejected(String(localized: "Blurry frame skipped — rotate more slowly"))
             } else {
