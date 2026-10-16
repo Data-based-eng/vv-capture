@@ -8,7 +8,7 @@ struct TurntableFlowView: View {
     @State private var engine: TurntableCaptureEngine?
     @State private var finishedRecord: ScanRecord?
     @State private var startupError: String?
-    @State private var hasSeenSetupTips = false
+    @AppStorage("vv-capture.hasSeenSetupTips") private var hasSeenSetupTips = false
 
     /// Screen-space rectangle the user places over the object.
     @State private var maskFrame = CGRect(x: 80, y: 240, width: 220, height: 260)

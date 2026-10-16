@@ -86,7 +86,7 @@
 				};
 			};
 			buildConfigurationList = PRJCONFIGLIST /* Build configuration list for PBXProject "ObjectScanner" */;
-			developmentRegion = tr;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
