@@ -318,7 +318,11 @@ final class TurntableCaptureEngine: ScanEngine {
     // MARK: - Private
 
     private func shotSaved(_ index: Int, takenAt: Date, sharpness: Float?) {
-        shotCount = index
+        // Count saved shots, not the shot index: blur rejections leave gaps in
+        // the numbering, and tracking the index overstated the photo count, the
+        // finish threshold, and the saved record's image count by the number of
+        // rejections. The index still names the file and the yaw entry.
+        shotCount += 1
         captureError = nil
         // \u03b8 itself is filled by the yaw estimator (ArUco marker on the
         // turntable edge). Until then the timestamp is the source of truth —
@@ -332,7 +336,7 @@ final class TurntableCaptureEngine: ScanEngine {
             sharpness: sharpness
         )
         if case .capturing = phase {
-            phase = .capturing(shots: index, limit: 0)
+            phase = .capturing(shots: shotCount, limit: 0)
         }
     }
 
