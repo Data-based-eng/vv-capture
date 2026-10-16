@@ -8,7 +8,7 @@ import os
 /// adds `medium`, `full` and `raw`. Same photos, same framework, higher-poly
 /// mesh — the only way to get full detail out of a photogrammetry scan.
 enum SourceImageBundle {
-    private static let logger = Logger(subsystem: "com.example.ObjectScanner", category: "bundle")
+    private static let logger = Logger(subsystem: "com.visionvend.capture", category: "bundle")
 
     enum BundleError: LocalizedError {
         case imagesMissing
@@ -17,9 +17,9 @@ enum SourceImageBundle {
         var errorDescription: String? {
             switch self {
             case .imagesMissing:
-                String(localized: "Kaynak görüntüler silinmiş. Tam detay için objeyi yeniden taramanız gerekiyor.")
+                String(localized: "Source images were deleted. You'll need to re-scan the object for full detail.")
             case .zipFailed(let detail):
-                "Arşiv oluşturulamadı: \(detail)"
+                "Couldn't create archive: \(detail)"
             }
         }
     }
@@ -41,7 +41,7 @@ enum SourceImageBundle {
             try zip(directory: imagesDirectory, to: destination)
         }.value
 
-        logger.info("Arşiv hazır: \(contents.count, privacy: .public) görüntü")
+        logger.info("Archive ready: \(contents.count, privacy: .public) images")
         return destination
     }
 
@@ -69,22 +69,17 @@ enum SourceImageBundle {
 
         if let coordinationError { throw BundleError.zipFailed(coordinationError.localizedDescription) }
         if let copyError { throw BundleError.zipFailed(copyError.localizedDescription) }
-        guard didProduce else { throw BundleError.zipFailed(String(localized: "Arşiv yazılamadı.")) }
+        guard didProduce else { throw BundleError.zipFailed(String(localized: "Couldn't write the archive.")) }
     }
 
     /// Pasted next to the share button — the Mac side is four lines of code and
     /// nobody should have to go looking for them.
     static let macInstructions = """
-        Projedeki hazır araçla:
+        With the tool in this project:
 
         swiftc -O -parse-as-library Tools/Reconstruct.swift -o /tmp/reconstruct
-        /tmp/reconstruct ~/Downloads/kareler ~/Desktop/model.usdz raw
+        /tmp/reconstruct ~/Downloads/frames ~/Desktop/model.usdz raw
 
-        Oda taramaları için sonuna --room ekle: obje maskelemesini kapatır, \
-        yoksa çözücü her karede tek bir obje arayıp odanın kalanını keser.
-
-        detail: macOS'ta .medium / .full / .raw mevcut, iOS'ta yalnızca .reduced var. \
-        Oda ölçeğinde fark küçük değil: reduced bütün odaya ~25.000 üçgen ve tek \
-        texture veriyor, bir objeye verdiğinin aynısını.
+        detail: macOS offers .medium / .full / .raw, iOS only .reduced.
         """
 }

@@ -1,15 +1,16 @@
 import SwiftUI
 
+/// Single-purpose shell: turntable capture, then a fresh session.
+/// One capture technology means no mode picker and no library tab —
+/// finish a scan and the next one starts clean.
 struct RootView: View {
+    @State private var runID = UUID()
+
     var body: some View {
-        TabView {
-            Tab("Tara", systemImage: "cube.transparent") {
-                NavigationStack { ScanSetupView() }
-            }
-            Tab("Kütüphane", systemImage: "square.stack.3d.up") {
-                NavigationStack { LibraryView() }
-            }
+        TurntableFlowView {
+            runID = UUID()
         }
+        .id(runID)
     }
 }
 

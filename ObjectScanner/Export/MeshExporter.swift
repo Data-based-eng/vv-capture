@@ -22,10 +22,10 @@ enum MeshExportFormat: String, CaseIterable, Identifiable, Sendable {
 
     var explanation: String {
         switch self {
-        case .usdz: String(localized: "Apple ekosistemi, AR Quick Look. Kaynak format — dönüşüm yok.")
-        case .obj: String(localized: "Yaygın değişim formatı. Blender, MeshLab, ZBrush.")
-        case .ply: String(localized: "Nokta bulutu / mesh, geometri odaklı araçlar.")
-        case .stl: String(localized: "3B baskı. Sadece geometri, materyal taşımaz.")
+        case .usdz: String(localized: "Apple ecosystem, AR Quick Look. Source format — no conversion.")
+        case .obj: String(localized: "Common interchange format. Blender, MeshLab, ZBrush.")
+        case .ply: String(localized: "Point cloud / mesh, geometry-focused tools.")
+        case .stl: String(localized: "3D printing. Geometry only, no materials.")
         }
     }
 
@@ -47,17 +47,17 @@ enum MeshExportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .sourceMissing:
-            String(localized: "Model dosyası bulunamadı.")
+            String(localized: "Model file not found.")
         case .formatUnsupported(let format):
             "\(format.displayName) bu cihazda desteklenmiyor."
         case .conversionFailed(let detail):
-            "Dönüştürme başarısız: \(detail)"
+            "Conversion failed: \(detail)"
         }
     }
 }
 
 enum MeshExporter {
-    private static let logger = Logger(subsystem: "com.example.ObjectScanner", category: "export")
+    private static let logger = Logger(subsystem: "com.visionvend.capture", category: "export")
 
     /// Converts a reconstructed USDZ into `format`, returning a temporary file
     /// ready to hand to a share sheet.
@@ -107,7 +107,7 @@ enum MeshExporter {
             }
         }.value
 
-        logger.info("Dışa aktarıldı: \(format.rawValue, privacy: .public)")
+        logger.info("Exported: \(format.rawValue, privacy: .public)")
         return destination
     }
 }

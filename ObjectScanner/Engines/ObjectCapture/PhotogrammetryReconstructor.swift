@@ -8,7 +8,7 @@ import os
 /// app is backgrounded, which is why the caller keeps the screen awake and the
 /// checkpoint directory is on disk.
 struct PhotogrammetryReconstructor {
-    private static let logger = Logger(subsystem: "com.example.ObjectScanner", category: "photogrammetry")
+    private static let logger = Logger(subsystem: "com.visionvend.capture", category: "photogrammetry")
 
     /// The model plus what the solver had to say about the input that produced it.
     struct Output {
@@ -43,7 +43,7 @@ struct PhotogrammetryReconstructor {
     ) async throws -> Output {
 
         guard PhotogrammetrySession.isSupported else {
-            throw ScanEngineError.reconstructionFailed(String(localized: "Bu cihaz cihaz-üstü fotogrametriyi desteklemiyor."))
+            throw ScanEngineError.reconstructionFailed(String(localized: "This device doesn't support on-device photogrammetry."))
         }
 
         let imageURLs = ((try? FileManager.default.contentsOfDirectory(
@@ -79,8 +79,8 @@ struct PhotogrammetryReconstructor {
                 _ = try await PhotogrammetrySample(contentsOf: probe)
             } catch {
                 effectiveMask = nil
-                Self.logger.error("Örnek okunamadı, maske devre dışı: \(error.localizedDescription, privacy: .public)")
-                await onWarning("Maske uygulanamadı, arka plan dahil edildi: \(error.localizedDescription)")
+                Self.logger.error("Couldn't read sample, mask disabled: \(error.localizedDescription, privacy: .public)")
+                await onWarning("Couldn't apply mask, background included: \(error.localizedDescription)")
             }
         }
 
@@ -99,8 +99,8 @@ struct PhotogrammetryReconstructor {
             // Masking is an optimisation, not the point. If the masked run fails for
             // any reason, fall back to the plain folder path so the user still gets a
             // model instead of nothing.
-            Self.logger.error("Maskeli çalışma başarısız, maskesiz deneniyor")
-            await onWarning(String(localized: "Maskeli işleme başarısız oldu, maskesiz tekrar denendi."))
+            Self.logger.error("Masked run failed, retrying unmasked")
+            await onWarning(String(localized: "Masked processing failed, retried without mask."))
             try? FileManager.default.removeItem(at: workspace.modelURL)
             return try await run(
                 workspace: workspace,
@@ -148,7 +148,7 @@ struct PhotogrammetryReconstructor {
             detail: detail.apiDetail
         )
         // The poses request rides along on alignment work the session already does,
-        // so it costs almost nothing and turns "kalite kötü" into three numbers.
+        // so it costs almost nothing and turns "bad quality" into three numbers.
         try session.process(requests: [modelRequest, .poses])
 
         // Fraction and stage arrive on two different outputs and interleave, so
@@ -180,16 +180,16 @@ struct PhotogrammetryReconstructor {
                 await onProgress(progress)
 
             case .processingComplete:
-                Self.logger.info("Yeniden yapılandırma tamamlandı: \(imageCount, privacy: .public) görüntü")
+                Self.logger.info("Reconstruction complete: \(imageCount, privacy: .public) images")
                 if let diagnostics {
-                    Self.logger.info("Poz teşhisi: \(diagnostics.summaryText, privacy: .public)")
+                    Self.logger.info("Pose diagnostics: \(diagnostics.summaryText, privacy: .public)")
                 }
                 return Output(modelURL: workspace.modelURL, poses: diagnostics)
 
             case .requestError(let request, let error):
                 // A failed poses request must not cost the user their model.
                 guard request == modelRequest else {
-                    Self.logger.error("Poz isteği başarısız: \(error.localizedDescription, privacy: .public)")
+                    Self.logger.error("Pose request failed: \(error.localizedDescription, privacy: .public)")
                     break
                 }
                 throw ScanEngineError.reconstructionFailed(error.localizedDescription)
@@ -198,7 +198,7 @@ struct PhotogrammetryReconstructor {
                 throw ScanEngineError.cancelled
 
             case .invalidSample(let id, let reason):
-                Self.logger.debug("Geçersiz örnek \(id, privacy: .public): \(reason, privacy: .public)")
+                Self.logger.debug("Invalid sample \(id, privacy: .public): \(reason, privacy: .public)")
 
             case .skippedSample, .automaticDownsampling, .inputComplete, .stitchingIncomplete:
                 break
@@ -211,7 +211,7 @@ struct PhotogrammetryReconstructor {
         // The stream ended without `.processingComplete`. Trust the file system
         // rather than guessing.
         guard FileManager.default.fileExists(atPath: workspace.modelURL.path(percentEncoded: false)) else {
-            throw ScanEngineError.reconstructionFailed(String(localized: "Oturum model üretmeden sona erdi."))
+            throw ScanEngineError.reconstructionFailed(String(localized: "Session ended without producing a model."))
         }
         return Output(modelURL: workspace.modelURL, poses: diagnostics)
     }

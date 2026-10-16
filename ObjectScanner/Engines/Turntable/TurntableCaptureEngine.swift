@@ -10,22 +10,19 @@ import os
 /// off a turning object. `PhotogrammetrySession` has no such dependency — it
 /// solves poses from the images themselves, and a turntable is geometrically
 /// equivalent to orbiting the camera.
-///
-/// So only capture is new here. The stills land in the same workspace layout, and
-/// reconstruction, storage, preview and export are the Faz 1 code unchanged.
 @MainActor
 @Observable
 final class TurntableCaptureEngine: ScanEngine {
-    private static let logger = Logger(subsystem: "com.example.ObjectScanner", category: "turntable")
+    private static let logger = Logger(subsystem: "com.visionvend.capture", category: "turntable")
 
     static let kind: ScanEngineKind = .turntable
 
     static var availability: EngineAvailability {
         guard AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) != nil else {
-            return .unsupportedDevice(reason: String(localized: "Arka kamera bulunamadı."))
+            return .unsupportedDevice(reason: String(localized: "Rear camera not found."))
         }
         guard DeviceCapabilities.supportsPhotogrammetry else {
-            return .unsupportedDevice(reason: String(localized: "Bu cihaz cihaz-üstü fotogrametriyi desteklemiyor."))
+            return .unsupportedDevice(reason: String(localized: "This device doesn't support on-device photogrammetry."))
         }
         return .available
     }
@@ -41,9 +38,18 @@ final class TurntableCaptureEngine: ScanEngine {
     /// Used only to prompt for a second pass at a different height.
     static let shotsPerRevolution = 36
 
-    /// Seconds between automatic shots. Roughly 10° of rotation per shot at a
-    /// comfortable hand speed, which is the usual turntable step.
-    var autoCaptureInterval: TimeInterval = 2.0
+    /// Turntable speed in revolutions per minute, when known. The auto-capture
+    /// interval is derived from it so shots land ~10° apart at any speed.
+    /// Nil means unknown — the yaw manifest's timestamps let \u03b8 backfill
+    /// later once the RPM is measured.
+    var turntableRPM: Double?
+
+    /// Seconds between automatic shots. RPM-derived when the turntable speed is
+    /// known, otherwise the 2.0 s default (~10° per shot at a comfortable hand speed).
+    var autoCaptureInterval: TimeInterval {
+        guard let rpm = turntableRPM, rpm > 0 else { return 2.0 }
+        return 60.0 / (rpm * Double(Self.shotsPerRevolution))
+    }
 
     /// True once a full revolution's worth of frames exists at one height.
     ///
@@ -82,8 +88,7 @@ final class TurntableCaptureEngine: ScanEngine {
     ///
     /// Valid only because the device is stationary: the object sits in the same part
     /// of every frame, so one rectangle masks the whole set. This is what keeps a
-    /// close or textured background out of the model — the guidance about moving the
-    /// backdrop a metre away is a workaround for not having it.
+    /// close or textured background out of the model.
     var objectMaskRect: CGRect?
 
     var session: AVCaptureSession? { coordinator?.session }
@@ -96,6 +101,7 @@ final class TurntableCaptureEngine: ScanEngine {
     private let reconstructor = PhotogrammetryReconstructor()
     private var coordinator: PhotoCaptureCoordinator?
     private var workspace: ScanWorkspace?
+    private var yawManifest: YawManifest?
     private var autoCaptureTask: Task<Void, Never>?
 
     init(storage: ScanStorage) {
@@ -106,7 +112,7 @@ final class TurntableCaptureEngine: ScanEngine {
 
     func start() throws {
         guard case .available = Self.availability else {
-            throw ScanEngineError.sessionUnavailable(Self.availability.blockedReason ?? "Bilinmeyen sebep")
+            throw ScanEngineError.sessionUnavailable(Self.availability.blockedReason ?? "Unknown reason")
         }
 
         phase = .preparing
@@ -119,11 +125,12 @@ final class TurntableCaptureEngine: ScanEngine {
             throw ScanEngineError.sessionUnavailable(error.localizedDescription)
         }
         self.workspace = workspace
+        self.yawManifest = YawManifest(directory: workspace.root)
 
         let coordinator = PhotoCaptureCoordinator(
             imagesDirectory: workspace.imagesURL,
-            onShotSaved: { [weak self] index in
-                Task { @MainActor in self?.shotSaved(index) }
+            onShotSaved: { [weak self] index, takenAt, sharpness in
+                Task { @MainActor in self?.shotSaved(index, takenAt: takenAt, sharpness: sharpness) }
             },
             onShotRejected: { [weak self] reason in
                 Task { @MainActor in
@@ -141,6 +148,7 @@ final class TurntableCaptureEngine: ScanEngine {
         } catch {
             storage.discard(workspace)
             self.workspace = nil
+            self.yawManifest = nil
             phase = .failed(message: error.localizedDescription)
             throw ScanEngineError.sessionUnavailable(error.localizedDescription)
         }
@@ -155,14 +163,14 @@ final class TurntableCaptureEngine: ScanEngine {
 
     func finish() async throws -> ScanRecord {
         guard let coordinator, let workspace else {
-            throw ScanEngineError.sessionUnavailable("Aktif oturum yok.")
+            throw ScanEngineError.sessionUnavailable("No active session.")
         }
 
         stopAutoCapture()
         coordinator.stop()
 
         guard shotCount > 0 else {
-            phase = .failed(message: String(localized: "Hiç fotoğraf çekilmedi."))
+            phase = .failed(message: String(localized: "No photos were taken."))
             throw ScanEngineError.noImagesCaptured
         }
 
@@ -268,9 +276,20 @@ final class TurntableCaptureEngine: ScanEngine {
 
     // MARK: - Private
 
-    private func shotSaved(_ index: Int) {
+    private func shotSaved(_ index: Int, takenAt: Date, sharpness: Float?) {
         shotCount = index
         captureError = nil
+        // \u03b8 itself is filled by the yaw estimator (ArUco marker on the
+        // turntable edge). Until then the timestamp is the source of truth —
+        // \u03b8 backfills as \u03c9\u00b7\u0394t once the RPM is known.
+        yawManifest?.append(
+            shot: index,
+            file: String(format: "shot_%04d.heic", index),
+            takenAt: takenAt,
+            thetaDeg: nil,
+            method: "timestamp",
+            sharpness: sharpness
+        )
         if case .capturing = phase {
             phase = .capturing(shots: index, limit: 0)
         }
@@ -279,13 +298,14 @@ final class TurntableCaptureEngine: ScanEngine {
     private func teardown() {
         stopAutoCapture()
         coordinator = nil
+        yawManifest = nil
         captureError = nil
     }
 
     private static func defaultName(for date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.locale = Locale(identifier: "en_US")
         formatter.dateFormat = "d MMM HH:mm"
-        return "Tabla \(formatter.string(from: date))"
+        return "Scan \(formatter.string(from: date))"
     }
 }

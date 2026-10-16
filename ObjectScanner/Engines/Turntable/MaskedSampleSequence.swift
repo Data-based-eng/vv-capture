@@ -22,7 +22,7 @@ struct MaskedSampleSequence: Sequence {
     }
 
     struct Iterator: IteratorProtocol {
-        private static let logger = Logger(subsystem: "com.example.ObjectScanner", category: "samples")
+        private static let logger = Logger(subsystem: "com.visionvend.capture", category: "samples")
 
         let imageURLs: [URL]
         let normalizedRect: CGRect?
@@ -44,7 +44,7 @@ struct MaskedSampleSequence: Sequence {
                 guard var sample = try? PhotogrammetrySample(contentsOf: url) else {
                     // A single unreadable file should not abort the whole
                     // reconstruction; the remaining images still carry the object.
-                    Self.logger.error("Örnek okunamadı: \(url.lastPathComponent, privacy: .public)")
+                    Self.logger.error("Couldn't read sample: \(url.lastPathComponent, privacy: .public)")
                     continue
                 }
 

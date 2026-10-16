@@ -4,7 +4,6 @@ import SwiftUI
 /// Capture flow for turntable photogrammetry: device fixed, object rotating.
 struct TurntableFlowView: View {
     @Environment(ScanStorage.self) private var storage
-    @Environment(\.dismiss) private var dismiss
 
     @State private var engine: TurntableCaptureEngine?
     @State private var finishedRecord: ScanRecord?
@@ -14,6 +13,10 @@ struct TurntableFlowView: View {
     /// Screen-space rectangle the user places over the object.
     @State private var maskFrame = CGRect(x: 80, y: 240, width: 220, height: 260)
 
+    /// Called when the flow ends (done, cancelled, or failed to start) so the
+    /// host can reset to a fresh capture session.
+    var onFinished: () -> Void = {}
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -22,13 +25,13 @@ struct TurntableFlowView: View {
                 content(for: engine)
             } else if let startupError {
                 TurntableMessageView(
-                    title: String(localized: "Kamera açılamadı"),
+                    title: String(localized: "Couldn't open the camera"),
                     message: startupError,
                     systemImage: "exclamationmark.triangle.fill",
                     tint: .orange
-                ) { dismiss() }
+                ) { onFinished() }
             } else {
-                ProgressView("Hazırlanıyor…").tint(.white)
+                ProgressView("Preparing…").tint(.white)
             }
         }
         .preferredColorScheme(.dark)
@@ -42,7 +45,7 @@ struct TurntableFlowView: View {
     private func content(for engine: TurntableCaptureEngine) -> some View {
         switch engine.phase {
         case .idle, .preparing:
-            ProgressView("Kamera hazırlanıyor…").tint(.white)
+            ProgressView("Preparing camera…").tint(.white)
 
         case .readyToDetect, .framing, .capturing:
             if hasSeenSetupTips {
@@ -54,7 +57,7 @@ struct TurntableFlowView: View {
                     hasSeenSetupTips = true
                 } onCancel: {
                     engine.cancel()
-                    dismiss()
+                    onFinished()
                 }
             }
 
@@ -62,19 +65,19 @@ struct TurntableFlowView: View {
             TurntableReconstructionView(progress: progress)
 
         case .done(let record):
-            TurntableResultView(record: record, warnings: engine.warnings) { dismiss() }
+            TurntableResultView(record: record, warnings: engine.warnings) { onFinished() }
                 .task { finishedRecord = record }
 
         case .failed(let message):
             TurntableMessageView(
-                title: String(localized: "Tarama başarısız"),
+                title: String(localized: "Scan failed"),
                 message: message,
                 systemImage: "exclamationmark.triangle.fill",
                 tint: .orange
-            ) { dismiss() }
+            ) { onFinished() }
 
         case .cancelled:
-            Color.clear.task { dismiss() }
+            Color.clear.task { onFinished() }
         }
     }
 
@@ -94,7 +97,7 @@ struct TurntableFlowView: View {
 
             TurntableOverlay(engine: engine) {
                 engine.cancel()
-                dismiss()
+                onFinished()
             }
         }
     }
@@ -121,7 +124,7 @@ private struct TurntableSetupGuide: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text("Döner tabla kurulumu")
+                Text("Turntable setup")
                     .font(.title2.bold())
 
                 // Now that a mask is supplied, the backdrop is no longer the thing
@@ -129,27 +132,27 @@ private struct TurntableSetupGuide: View {
                 // takes the top slot instead. Overstating a requirement the app has
                 // since solved just trains people to ignore the guide.
                 requirement(
-                    String(localized: "Sarı çerçeveyi objenin üzerine yerleştir"),
-                    detail: String(localized: "Sürükleyerek taşı, iki parmakla boyutlandır. Sadece çerçevenin içi modellenir — masa, kâğıt ve arka plan tamamen dışlanır. Telefon sabit olduğu için tek çerçeve bütün kareler için geçerli."),
+                    String(localized: "Place the yellow frame over the object"),
+                    detail: String(localized: "Drag to move, pinch with two fingers to resize. Only the inside of the frame is modeled — table, paper, and background are fully excluded. Because the phone is fixed, one frame covers every shot."),
                     systemImage: "viewfinder.rectangular",
                     isCritical: true
                 )
 
                 requirement(
-                    "Arka plan sade olursa yine iyi olur",
-                    detail: String(localized: "Çerçeve işi çözüyor ama kenarları objeye çok yakınsa yardımcı olur: mümkünse arka planı biraz geriye al, yan yana kâğıt yerine tek parça bir fon kullan."),
+                    "A plain background still helps",
+                    detail: String(localized: "The frame does the heavy lifting, but if its edges sit close to the object it helps to move the background back a little and use one continuous backdrop instead of loose paper."),
                     systemImage: "square.dashed"
                 )
 
                 requirement(
-                    "Telefon sabit dursun",
-                    detail: String(localized: "Tripod veya bir desteğe yasla. Çekim sırasında telefona dokunma."),
+                    "Keep the phone still",
+                    detail: String(localized: "Use a tripod or prop it up. Don't touch the phone during capture."),
                     systemImage: "iphone.gen3"
                 )
 
                 requirement(
-                    String(localized: "Objeyi adım adım döndür"),
-                    detail: String(localized: "Her karede ~10° çevir, kısa bir an bekle. Sürekli döndürmek hareket bulanıklığı yapar ve eşleşmeyi bozar."),
+                    String(localized: "Rotate the object in steps"),
+                    detail: String(localized: "Turn ~10° per shot and pause briefly. Continuous rotation causes motion blur and breaks matching."),
                     systemImage: "arrow.trianglehead.clockwise"
                 )
 
@@ -160,33 +163,33 @@ private struct TurntableSetupGuide: View {
                 // across the surface, so the solver sees a different-looking patch
                 // each time and stops matching it.
                 requirement(
-                    String(localized: "Işık her yönden yumuşak olsun — yoksa hizalama düşer"),
-                    detail: String(localized: "Etrafında dönerken ışık objeye göre sabit kalır. Objeyi çevirdiğinde gölge yüzeyin üzerinde kayar ve çözücü aynı noktayı iki karede tanıyamaz. Tek lamba yerine dağınık ışık kullan; mümkünse lambayı objeyle birlikte döndür."),
+                    String(localized: "Soft light from all sides — or alignment suffers"),
+                    detail: String(localized: "As the object turns, the light stays fixed relative to it. Shadows slide across the surface and the solver can't recognize the same point in two frames. Use diffuse light instead of a single lamp; if possible, rotate the lamp with the object."),
                     systemImage: "lightbulb.fill",
                     isCritical: true
                 )
 
                 requirement(
-                    String(localized: "Bir tur yetmez — yüksekliği değiştir"),
-                    detail: String(localized: "Tek yükseklikten çekilen kareler tek bir halka oluşturur ve dikey paralaks vermez; üst yüzeyler bu yüzden yumuşar. Bir turu bitirince telefonun yüksekliğini/açısını değiştirip bir tur daha çek. Alt yüz için objeyi ters çevirip tekrarla."),
+                    String(localized: "One revolution isn't enough — change the height"),
+                    detail: String(localized: "Shots from one height form a single ring with no vertical parallax, so top surfaces come out soft. After one revolution, change the phone's height/angle and shoot another. Flip the object and repeat for the bottom."),
                     systemImage: "arrow.up.and.down",
                     isCritical: true
                 )
 
                 if !deliversDepth {
                     Label(
-                        "Bu cihazda fotoğraflara derinlik gömülemiyor — model gerçek boyutta olmayacak, ölçeksiz çıkacak.",
+                        "This device can't embed depth in photos — the model won't be true to scale.",
                         systemImage: "ruler"
                     )
                     .font(.footnote)
                     .foregroundStyle(.orange)
                 }
 
-                Button("Anladım, Başla", action: onContinue)
+                Button("Got it, Start", action: onContinue)
                     .buttonStyle(TurntablePrimaryButton())
                     .padding(.top, 4)
 
-                Button("Vazgeç", action: onCancel)
+                Button("Cancel", action: onCancel)
                     .font(.footnote)
                     .frame(maxWidth: .infinity)
             }
@@ -283,17 +286,17 @@ private struct TurntableOverlay: View {
         }
         .padding(.horizontal)
         .padding(.bottom, 8)
-        .confirmationDialog("Taramayı iptal et?", isPresented: $isConfirmingCancel, titleVisibility: .visible) {
-            Button("İptal Et ve Çık", role: .destructive, action: onCancel)
-            Button("Taramaya Dön", role: .cancel) {}
+        .confirmationDialog("Cancel the scan?", isPresented: $isConfirmingCancel, titleVisibility: .visible) {
+            Button("Discard and Exit", role: .destructive, action: onCancel)
+            Button("Back to Scan", role: .cancel) {}
         } message: {
-            Text("\(engine.shotCount) fotoğraf silinecek.")
+            Text("\(engine.shotCount) photos will be deleted.")
         }
         .alert(
-            "Model oluşturulamadı",
+            "Couldn't create the model",
             isPresented: Binding(get: { finishError != nil }, set: { if !$0 { finishError = nil } })
         ) {
-            Button("Tamam") { finishError = nil }
+            Button("OK") { finishError = nil }
         } message: {
             Text(finishError ?? "")
         }
@@ -314,7 +317,7 @@ private struct TurntableOverlay: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 1) {
-                Text("\(engine.shotCount) fotoğraf")
+                Text("\(engine.shotCount) photos")
                     .font(.footnote.weight(.semibold).monospacedDigit())
                 HStack(spacing: 5) {
                     if engine.megapixels > 0 {
@@ -324,7 +327,7 @@ private struct TurntableOverlay: View {
                         Image(systemName: "lock.fill")
                     }
                     if engine.rejectedShots > 0 {
-                        Text("· \(engine.rejectedShots) bulanık")
+                        Text("· \(engine.rejectedShots) blurry")
                             .foregroundStyle(.orange)
                     }
                 }
@@ -350,7 +353,7 @@ private struct TurntableOverlay: View {
             // of soft top and bottom surfaces.
             if engine.shouldChangeElevation {
                 Label(
-                    "Bir tur doldu — telefonun yüksekliğini veya açısını değiştirip bir tur daha çek",
+                    "One revolution done — change the phone's height or angle and shoot another",
                     systemImage: "arrow.up.and.down.circle.fill"
                 )
                 .font(.footnote.weight(.medium))
@@ -358,8 +361,8 @@ private struct TurntableOverlay: View {
                 .multilineTextAlignment(.center)
             } else {
                 Text(engine.isAutoCapturing
-                     ? "Otomatik çekim açık — objeyi yavaşça döndürmeye devam edin"
-                     : "Objeyi ~10° çevirip çekin")
+                     ? "Auto-capture is on — keep rotating the object slowly"
+                     : "Rotate the object ~10° and shoot")
                     .font(.footnote)
                     .foregroundStyle(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
@@ -370,18 +373,18 @@ private struct TurntableOverlay: View {
                     engine.lockCameraSettings()
                 } label: {
                     switch engine.lockState {
-                    case .unlocked: Text("Odağı Kilitle")
+                    case .unlocked: Text("Lock Focus")
                     // Locking waits for focus and exposure to converge, which takes a
                     // moment — without this the button looked like it did nothing.
-                    case .locking: Label("Kilitleniyor…", systemImage: "circle.dotted")
-                    case .locked: Label("Odak Kilitli", systemImage: "lock.fill")
-                    case .failed: Label("Kilitlenemedi", systemImage: "lock.slash")
+                    case .locking: Label("Locking…", systemImage: "circle.dotted")
+                    case .locked: Label("Focus Locked", systemImage: "lock.fill")
+                    case .failed: Label("Couldn't Lock", systemImage: "lock.slash")
                     }
                 }
                 .buttonStyle(TurntableSecondaryButton())
                 .disabled(engine.lockState == .locking || engine.lockState == .locked)
 
-                Button(engine.isAutoCapturing ? "Otomatiği Durdur" : "Otomatik Çekim") {
+                Button(engine.isAutoCapturing ? "Stop Auto" : "Auto Capture") {
                     engine.toggleAutoCapture()
                 }
                 .buttonStyle(TurntableSecondaryButton())
@@ -403,14 +406,14 @@ private struct TurntableOverlay: View {
                 if isFinishing {
                     ProgressView().tint(.black)
                 } else {
-                    Text("Bitir ve Modeli Oluştur")
+                    Text("Finish and Build Model")
                 }
             }
             .buttonStyle(TurntablePrimaryButton())
             .disabled(isFinishing || !engine.canFinish)
 
             if !engine.canFinish {
-                Text("Çözücünün turu kapatabilmesi için en az \(TurntableCaptureEngine.minimumShots) fotoğraf gerekiyor.")
+                Text("The solver needs at least \(TurntableCaptureEngine.minimumShots) photos to close the loop.")
                     .font(.caption2)
                     .foregroundStyle(.white.opacity(0.55))
                     .multilineTextAlignment(.center)
@@ -447,14 +450,14 @@ private struct TurntableReconstructionView: View {
             ProgressView(value: progress.fraction)
                 .progressViewStyle(.linear)
                 .frame(maxWidth: 240)
-            Text(progress.stage?.displayName ?? String(localized: "Model oluşturuluyor"))
+            Text(progress.stage?.displayName ?? String(localized: "Building model"))
                 .font(.headline)
             if let remaining = progress.remainingText {
-                Text("\(remaining) kaldı")
+                Text("\(remaining) left")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-            Text("Uygulamayı arka plana almayın.")
+            Text("Don't background the app.")
                 .font(.footnote)
                 .foregroundStyle(.tertiary)
         }
@@ -489,11 +492,11 @@ private struct TurntableResultView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
 
             VStack(spacing: 4) {
-                Label("Tarama hazır", systemImage: "checkmark.circle.fill")
+                Label("Scan ready", systemImage: "checkmark.circle.fill")
                     .font(.headline)
                     .foregroundStyle(.green)
                 if let count = record.imageCount {
-                    Text("\(count) fotoğraf işlendi")
+                    Text("\(count) photos processed")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -505,7 +508,7 @@ private struct TurntableResultView: View {
                         .foregroundStyle(.tertiary)
                 }
                 if !record.isMetricallyScaled {
-                    Text("Ölçeksiz — derinlik verisi yoktu")
+                    Text("Unscaled — no depth data")
                         .font(.caption)
                         .foregroundStyle(.orange)
                 }
@@ -519,7 +522,7 @@ private struct TurntableResultView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Button("Bitti", action: onDone)
+            Button("Done", action: onDone)
                 .buttonStyle(TurntablePrimaryButton())
                 .padding(.horizontal, 40)
         }
@@ -545,7 +548,7 @@ private struct TurntableMessageView: View {
                 .multilineTextAlignment(.center)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            Button("Kapat", action: onDismiss)
+            Button("Close", action: onDismiss)
                 .buttonStyle(TurntablePrimaryButton())
                 .padding(.horizontal, 40)
         }
@@ -600,7 +603,7 @@ private struct ObjectMaskRectangle: View {
                 .frame(width: displayed.width, height: displayed.height)
                 .position(x: displayed.midX, y: displayed.midY)
                 .overlay(alignment: .topLeading) {
-                    Text("obje")
+                    Text("object")
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.black)
                         .padding(.horizontal, 5)

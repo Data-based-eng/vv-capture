@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "APPTARGET"
-               BuildableName = "ObjectScanner.app"
-               BlueprintName = "ObjectScanner"
+               BuildableName = "VVCapture.app"
+               BlueprintName = "VVCapture"
                ReferencedContainer = "container:ObjectScanner.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -45,8 +45,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "APPTARGET"
-            BuildableName = "ObjectScanner.app"
-            BlueprintName = "ObjectScanner"
+            BuildableName = "VVCapture.app"
+            BlueprintName = "VVCapture"
             ReferencedContainer = "container:ObjectScanner.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,8 +62,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "APPTARGET"
-            BuildableName = "ObjectScanner.app"
-            BlueprintName = "ObjectScanner"
+            BuildableName = "VVCapture.app"
+            BlueprintName = "VVCapture"
             ReferencedContainer = "container:ObjectScanner.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

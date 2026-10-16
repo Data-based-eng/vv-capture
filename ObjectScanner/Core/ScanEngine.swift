@@ -1,11 +1,9 @@
 import Foundation
 
-/// The contract both capture modes fulfil.
+/// The contract the capture engine fulfils.
 ///
-/// Kept deliberately thin. The two engines have very different *interaction*
-/// models — photogrammetry needs a bounding box and multiple passes, a depth
-/// engine needs a turntable rig — so their views differ. What must stay common
-/// is lifecycle, coarse progress, and the `ScanRecord` they hand back.
+/// Kept deliberately thin. What must stay common is lifecycle, coarse
+/// progress, and the `ScanRecord` handed back.
 @MainActor
 protocol ScanEngine: AnyObject {
     static var kind: ScanEngineKind { get }
@@ -36,14 +34,14 @@ enum EngineAvailability: Equatable, Sendable {
     var blockedReason: String? {
         switch self {
         case .available: nil
-        case .notImplementedYet: String(localized: "Bu mod henüz gelmedi (Faz 2).")
+        case .notImplementedYet: String(localized: "This mode isn't here yet (Phase 2).")
         case .unsupportedDevice(let reason): reason
         }
     }
 }
 
-/// Coarse lifecycle, shared by both engines so the shell UI can show progress
-/// without knowing which engine is running.
+/// Coarse lifecycle, so the shell UI can show progress without knowing
+/// engine internals.
 enum ScanPhase: Equatable, Sendable {
     case idle
     case preparing
@@ -76,13 +74,13 @@ enum ScanEngineError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .sessionUnavailable(let detail):
-            "Tarama oturumu başlatılamadı: \(detail)"
+            "Couldn't start the scan session: \(detail)"
         case .reconstructionFailed(let detail):
-            "Model oluşturulamadı: \(detail)"
+            "Couldn't create the model: \(detail)"
         case .noImagesCaptured:
-            String(localized: "Hiç görüntü yakalanmadı. Taramayı tekrar deneyin.")
+            String(localized: "No images were captured. Try the scan again.")
         case .cancelled:
-            "Tarama iptal edildi."
+            "Scan cancelled."
         }
     }
 }

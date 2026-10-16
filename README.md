@@ -1,3 +1,15 @@
+# VV Capture
+
+> VisionVend fork of [ObjectScanner](https://github.com/buraksahinkaya/objectscanner)
+> (Apache-2.0). Stripped to a single purpose: turntable product capture for
+> VisionVend SKU onboarding. The iPhone stays fixed, the product rotates;
+> every shot gets a yaw entry in `yaw.jsonl` for the downstream pipeline
+> (panorama → OCR, multi-view gallery, YOLO training data, Gaussian splat).
+
+Original README follows.
+
+---
+
 <p align="center">
   <img src="docs/icon.png" width="120" alt="ObjectScanner icon">
 </p>

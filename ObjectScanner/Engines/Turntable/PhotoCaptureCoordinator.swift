@@ -6,7 +6,7 @@ import os
 /// Separate from the engine because AVFoundation delivers on its own queues and
 /// wants an `NSObject` delegate, while the engine is a main-actor observable.
 final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
-    private static let logger = Logger(subsystem: "com.example.ObjectScanner", category: "turntable")
+    private static let logger = Logger(subsystem: "com.visionvend.capture", category: "turntable")
 
     enum SetupError: LocalizedError {
         case noCamera
@@ -15,9 +15,9 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
 
         var errorDescription: String? {
             switch self {
-            case .noCamera: String(localized: "Arka kamera bulunamadı.")
-            case .configurationFailed(let detail): "Kamera yapılandırılamadı: \(detail)"
-            case .noPhotoData: String(localized: "Fotoğraf verisi alınamadı.")
+            case .noCamera: String(localized: "Rear camera not found.")
+            case .configurationFailed(let detail): "Couldn't configure the camera: \(detail)"
+            case .noPhotoData: String(localized: "Couldn't get photo data.")
             }
         }
     }
@@ -34,7 +34,7 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
     private(set) var megapixels = 0
 
     private let photoOutput = AVCapturePhotoOutput()
-    private let sessionQueue = DispatchQueue(label: "com.example.ObjectScanner.turntable")
+    private let sessionQueue = DispatchQueue(label: "com.visionvend.capture.turntable")
     private let imagesDirectory: URL
 
     private var device: AVCaptureDevice?
@@ -54,13 +54,13 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
     /// A frame scoring below this fraction of the session best is discarded.
     private let sharpnessFloor: Float = 0.45
 
-    private let onShotSaved: @Sendable (Int) -> Void
+    private let onShotSaved: @Sendable (Int, Date, Float?) -> Void
     private let onShotRejected: @Sendable (String) -> Void
     private let onFailure: @Sendable (String) -> Void
 
     init(
         imagesDirectory: URL,
-        onShotSaved: @escaping @Sendable (Int) -> Void,
+        onShotSaved: @escaping @Sendable (Int, Date, Float?) -> Void,
         onShotRejected: @escaping @Sendable (String) -> Void,
         onFailure: @escaping @Sendable (String) -> Void
     ) {
@@ -88,7 +88,7 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
         do {
             let input = try AVCaptureDeviceInput(device: device)
             guard session.canAddInput(input) else {
-                throw SetupError.configurationFailed("Girdi eklenemedi.")
+                throw SetupError.configurationFailed("Couldn't add input.")
             }
             session.addInput(input)
         } catch let error as SetupError {
@@ -101,7 +101,7 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
 
         guard session.canAddOutput(photoOutput) else {
             session.commitConfiguration()
-            throw SetupError.configurationFailed(String(localized: "Fotoğraf çıktısı eklenemedi."))
+            throw SetupError.configurationFailed(String(localized: "Couldn't add photo output."))
         }
         session.addOutput(photoOutput)
 
@@ -130,7 +130,7 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
             connection.preferredVideoStabilizationMode = .off
         }
 
-        Self.logger.info("Turntable kamerası hazır — \(self.megapixels, privacy: .public) MP, derinlik: \(self.deliversDepth, privacy: .public)")
+        Self.logger.info("Turntable camera ready — \(self.megapixels, privacy: .public) MP, depth: \(self.deliversDepth, privacy: .public)")
     }
 
     func start() {
@@ -201,7 +201,7 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
             if device.isWhiteBalanceModeSupported(.locked) { device.whiteBalanceMode = .locked }
             device.unlockForConfiguration()
 
-            Self.logger.info("Odak, pozlama ve beyaz dengesi kilitlendi")
+            Self.logger.info("Focus, exposure, and white balance locked")
             completion(true)
         }
     }
@@ -245,6 +245,7 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
 
             self.shotIndex += 1
             let index = self.shotIndex
+            let takenAt = Date()
             let destination = self.imagesDirectory
                 .appending(path: String(format: "shot_%04d.heic", index), directoryHint: .notDirectory)
 
@@ -252,7 +253,7 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
             // `Sendable`, but its id is a plain `Int64`.
             let settingsID = settings.uniqueID
 
-            let delegate = PhotoDelegate(destination: destination) { [weak self] result in
+            let delegate = PhotoDelegate(destination: destination, takenAt: takenAt) { [weak self] result in
                 guard let self else { return }
                 self.pendingLock.lock()
                 self.pendingCaptures[settingsID] = nil
@@ -276,7 +277,7 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
         case .success(let capture):
             guard let sharpness = capture.sharpness else {
                 // No usable preview to judge; keeping the frame beats guessing.
-                onShotSaved(index)
+                onShotSaved(index, capture.takenAt, nil)
                 return
             }
 
@@ -287,10 +288,10 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
                 // the auto-capture loop will cover this angle again shortly.
                 try? FileManager.default.removeItem(at: destination)
                 shotIndex -= 1
-                Self.logger.debug("Bulanık kare atıldı: \(sharpness, privacy: .public) / \(self.bestSharpness, privacy: .public)")
-                onShotRejected(String(localized: "Bulanık kare atlandı — daha yavaş çevirin"))
+                Self.logger.debug("Blurry frame dropped: \(sharpness, privacy: .public) / \(self.bestSharpness, privacy: .public)")
+                onShotRejected(String(localized: "Blurry frame skipped — rotate more slowly"))
             } else {
-                onShotSaved(index)
+                onShotSaved(index, capture.takenAt, sharpness)
             }
         }
     }
@@ -299,14 +300,17 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
 /// One-shot photo delegate: writes the file, scores its preview and reports back.
 private final class PhotoDelegate: NSObject, AVCapturePhotoCaptureDelegate {
     struct Capture {
+        var takenAt: Date
         var sharpness: Float?
     }
 
     private let destination: URL
+    private let takenAt: Date
     private let completion: @Sendable (Result<Capture, Error>) -> Void
 
-    init(destination: URL, completion: @escaping @Sendable (Result<Capture, Error>) -> Void) {
+    init(destination: URL, takenAt: Date, completion: @escaping @Sendable (Result<Capture, Error>) -> Void) {
         self.destination = destination
+        self.takenAt = takenAt
         self.completion = completion
         super.init()
     }
@@ -329,7 +333,7 @@ private final class PhotoDelegate: NSObject, AVCapturePhotoCaptureDelegate {
 
         do {
             try data.write(to: destination, options: .atomic)
-            completion(.success(Capture(sharpness: sharpness)))
+            completion(.success(Capture(takenAt: takenAt, sharpness: sharpness)))
         } catch {
             completion(.failure(error))
         }

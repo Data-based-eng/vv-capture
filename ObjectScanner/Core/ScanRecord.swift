@@ -32,9 +32,8 @@ struct ScanRecord: Identifiable, Codable, Hashable, Sendable {
     let detail: ReconstructionDetail?
 
     /// One-line description of what the model contains, when the engine can say
-    /// something more useful than a file size — RoomPlan knows it produced four
-    /// walls and seven pieces of furniture, photogrammetry knows nothing of the
-    /// sort. Optional, so records written before this existed still decode.
+    /// something more useful than a file size. Optional, so records written
+    /// before this existed still decode.
     var summary: String?
 
     /// True when the file is a mesh Quick Look can render. Point clouds are not,
@@ -87,14 +86,14 @@ enum ReconstructionDetail: String, Codable, CaseIterable, Sendable, Identifiable
 
     var displayName: String {
         switch self {
-        case .reduced: String(localized: "Cihaz üstü (reduced)")
+        case .reduced: String(localized: "On-device (reduced)")
         }
     }
 
     var explanation: String {
         switch self {
         case .reduced:
-            String(localized: "iOS cihaz üstü fotogrametride tek desteklenen seviye. Daha yüksek poligon için kaynak görüntüleri Mac'e aktarın.")
+            String(localized: "The only level iOS supports for on-device photogrammetry. Transfer the source images to a Mac for higher polygon counts.")
         }
     }
 }

@@ -4,7 +4,7 @@ import simd
 
 /// What the solver actually managed to do with the captured images.
 ///
-/// Exists because "kalite kötü" is not a diagnosis. A soft, mushy mesh has three
+/// Exists because "bad quality" is not a diagnosis. A soft, mushy mesh has three
 /// very different causes and they need different fixes:
 ///
 /// 1. Most images never got aligned → the solve is running on a fraction of the
@@ -108,9 +108,9 @@ struct PoseDiagnostics: Sendable {
 
     /// One line for the library row. Angles are omitted where they mean nothing.
     var summaryText: String {
-        let alignment = "\(solvedSamples)/\(totalSamples) hizalandı"
+        let alignment = "\(solvedSamples)/\(totalSamples) aligned"
         guard framing == .orbit else { return alignment }
-        return "\(alignment) · yatay \(azimuthCoverageDegrees)° · dikey \(elevationSpreadDegrees)°"
+        return "\(alignment) · azimuth \(azimuthCoverageDegrees)° · elevation \(elevationSpreadDegrees)°"
     }
 
     /// The reason the mesh looks the way it does, when the numbers say so.
@@ -126,22 +126,22 @@ struct PoseDiagnostics: Sendable {
             // One piece of advice for both would be wrong half the time.
             switch framing {
             case .orbit:
-                notes.append("\(dropped) fotoğraf hizalanamadı ve modele hiç girmedi. En yaygın sebebi ışığın objeyle birlikte dönmesi: obje çevrilirken yüzeydeki gölge kayıyor, çözücü aynı noktayı iki karede eşleştiremiyor. Işığı her yönden yumuşak yap veya lambayı objeyle birlikte döndür.")
+                notes.append("\(dropped) photos couldn't be aligned and never entered the model. The most common cause is light rotating with the object: as the object turns, shadows slide across the surface and the solver can't match the same point in two frames. Make the light soft from all sides, or rotate the lamp with the object.")
             case .interior:
-                notes.append("\(dropped) kare hizalanamadı ve modele hiç girmedi — karelerin yalnızca %\(totalSamples > 0 ? solvedSamples * 100 / totalSamples : 0)'i kullanıldı. Yürürken en yaygın sebep hareket bulanıklığı ve hızlı dönüş: telefonu çevirirken bir an durakla, ışığı artır. Bomboş düz duvarlar da eşleşecek desen bırakmaz.")
+                notes.append("\(dropped) frames couldn't be aligned and never entered the model — only \(totalSamples > 0 ? solvedSamples * 100 / totalSamples : 0)% were used. When walking, the most common causes are motion blur and fast turns: pause briefly while rotating the phone and add light. Empty flat walls also leave no pattern to match.")
             }
         }
 
         switch framing {
         case .orbit:
             if azimuthCoverageDegrees < 300 {
-                notes.append("Yatay kapsama \(azimuthCoverageDegrees)° — tam tur kapanmamış. Kapanmayan tarafta yüzey uydurma çıkar.")
+                notes.append("Azimuth coverage \(azimuthCoverageDegrees)° — the full turn didn't close. The uncovered side will have hallucinated surface.")
             }
 
             // The single-ring case. Worth stating even when everything else is fine,
             // because it is the difference between a turntable pass and an orbit.
             if elevationSpreadDegrees < 15 {
-                notes.append("Bütün kareler neredeyse aynı yükseklikten (\(elevationSpreadDegrees)° dikey yayılım). Tek halka üzerindeki kameralar dikey paralaks vermez; üst ve alt yüzeyler bu yüzden yumuşuyor. Telefonun yüksekliğini/açısını değiştirip ikinci bir tur çekmek en büyük tek iyileştirme.")
+                notes.append("Almost all frames are from the same height (\(elevationSpreadDegrees)° elevation spread). Cameras on a single ring give no vertical parallax, so top and bottom surfaces come out soft. Changing the phone's height/angle and shooting a second revolution is the single biggest improvement.")
             }
 
         case .interior:
@@ -150,7 +150,7 @@ struct PoseDiagnostics: Sendable {
             // and the same single texture that a game controller gets. At room scale
             // that is roughly one triangle per 20 cm² — no amount of walking fixes it.
             if solvedSamples >= (totalSamples * 4) / 5 {
-                notes.append(String(localized: "Çekim iyi: kareler hizalandı. Kalitenin düşük kalmasının sebebi çekim değil, cihaz üstü `reduced` seviyesi — oda ölçeğinde ~25.000 üçgen ve tek texture bütün yüzeye yayılıyor. Bir obje için bol, bir oda için çok az. Kareler saklandı: Mac'te `.raw` ile yeniden işlemek tek gerçek çözüm."))
+                notes.append(String(localized: "Capture is good: frames aligned. The low quality isn't the capture — it's the on-device `reduced` level: ~25,000 triangles and a single texture spread over the whole surface. Plenty for an object, far too few for a room. Frames are saved: reprocessing on a Mac at `.raw` is the real fix."))
             }
         }
 

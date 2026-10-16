@@ -12,14 +12,14 @@ struct ReconstructionProgress: Equatable, Sendable {
 
     /// Formatted countdown, or nil while the session has no estimate yet.
     /// Deliberately coarse: the underlying estimate swings by tens of seconds and
-    /// a jittering "1:23 kaldı" reads as broken.
+    /// a jittering "1:23 left" reads as broken.
     var remainingText: String? {
         guard let estimatedRemaining, estimatedRemaining > 5 else { return nil }
         let minutes = Int(estimatedRemaining) / 60
         switch minutes {
-        case 0: return String(localized: "1 dakikadan az")
-        case 1...2: return String(localized: "yaklaşık \(minutes + 1) dakika")
-        default: return String(localized: "yaklaşık \(minutes) dakika")
+        case 0: return String(localized: "Less than a minute")
+        case 1...2: return String(localized: "about \(minutes + 1) minutes")
+        default: return String(localized: "about \(minutes) minutes")
         }
     }
 }
@@ -27,7 +27,7 @@ struct ReconstructionProgress: Equatable, Sendable {
 /// The pipeline stages photogrammetry moves through, in order.
 ///
 /// Showing these beats a bare percentage: a 4-minute run that sits at 40% looks
-/// stuck, whereas "Nokta bulutu oluşturuluyor" reads as working.
+/// stuck, whereas "Generating point cloud" reads as working.
 enum ReconstructionStage: Int, Equatable, Sendable, CaseIterable, Identifiable {
     case preProcessing
     case imageAlignment
@@ -40,12 +40,12 @@ enum ReconstructionStage: Int, Equatable, Sendable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .preProcessing: String(localized: "Görüntüler hazırlanıyor")
-        case .imageAlignment: String(localized: "Kamera pozları çözülüyor")
-        case .pointCloudGeneration: String(localized: "Nokta bulutu oluşturuluyor")
-        case .meshGeneration: String(localized: "Mesh çıkarılıyor")
-        case .textureMapping: String(localized: "Texture yerleştiriliyor")
-        case .optimization: String(localized: "Model optimize ediliyor")
+        case .preProcessing: String(localized: "Preparing images")
+        case .imageAlignment: String(localized: "Solving camera poses")
+        case .pointCloudGeneration: String(localized: "Generating point cloud")
+        case .meshGeneration: String(localized: "Extracting mesh")
+        case .textureMapping: String(localized: "Placing texture")
+        case .optimization: String(localized: "Optimizing model")
         }
     }
 

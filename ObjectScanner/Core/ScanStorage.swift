@@ -24,7 +24,7 @@ struct ScanWorkspace: Sendable {
 @MainActor
 @Observable
 final class ScanStorage {
-    private static let logger = Logger(subsystem: "com.example.ObjectScanner", category: "storage")
+    private static let logger = Logger(subsystem: "com.visionvend.capture", category: "storage")
 
     private(set) var scans: [ScanRecord] = []
 
@@ -53,7 +53,7 @@ final class ScanStorage {
             scans = decoded.filter { fileManager.fileExists(atPath: modelURL(for: $0).path(percentEncoded: false)) }
             if scans.count != decoded.count { persist() }
         } catch {
-            Self.logger.error("Kütüphane okunamadı: \(error.localizedDescription, privacy: .public)")
+            Self.logger.error("Couldn't read library: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -64,7 +64,7 @@ final class ScanStorage {
             encoder.outputFormatting = .prettyPrinted
             try encoder.encode(scans).write(to: libraryFile, options: .atomic)
         } catch {
-            Self.logger.error("Kütüphane yazılamadı: \(error.localizedDescription, privacy: .public)")
+            Self.logger.error("Couldn't write library: \(error.localizedDescription, privacy: .public)")
         }
     }
 
