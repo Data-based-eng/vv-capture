@@ -26,7 +26,6 @@ protocol ScanEngine: AnyObject {
 
 enum EngineAvailability: Equatable, Sendable {
     case available
-    case notImplementedYet
     case unsupportedDevice(reason: String)
 
     var isUsable: Bool { self == .available }
@@ -34,7 +33,6 @@ enum EngineAvailability: Equatable, Sendable {
     var blockedReason: String? {
         switch self {
         case .available: nil
-        case .notImplementedYet: String(localized: "This mode isn't here yet (Phase 2).")
         case .unsupportedDevice(let reason): reason
         }
     }
@@ -45,12 +43,6 @@ enum EngineAvailability: Equatable, Sendable {
 enum ScanPhase: Equatable, Sendable {
     case idle
     case preparing
-    /// Sensors are live but object detection has not started. The user aims at the
-    /// object and confirms — detection cannot begin before the camera feed is on
-    /// screen, so this is a real step rather than a loading state.
-    case readyToDetect
-    /// Engine is asking the user to frame the object (bounding box, distance).
-    case framing
     case capturing(shots: Int, limit: Int)
     case reconstructing(ReconstructionProgress)
     case done(ScanRecord)

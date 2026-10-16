@@ -49,7 +49,7 @@ enum MeshExportError: LocalizedError {
         case .sourceMissing:
             String(localized: "Model file not found.")
         case .formatUnsupported(let format):
-            "\(format.displayName) bu cihazda desteklenmiyor."
+            "\(format.displayName) isn't supported on this device."
         case .conversionFailed(let detail):
             "Conversion failed: \(detail)"
         }

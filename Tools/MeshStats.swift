@@ -17,18 +17,18 @@ struct MeshStats {
     static func main() {
         let paths = Array(CommandLine.arguments.dropFirst())
         guard !paths.isEmpty else {
-            FileHandle.standardError.write(Data("Kullanım: meshstats <model.usdz> …\n".utf8))
+            FileHandle.standardError.write(Data("Usage: meshstats <model.usdz> …\n".utf8))
             exit(2)
         }
 
         // Padded manually: `String(format:)` ignores width flags on `%@`, which is
         // why an earlier version printed a ragged header.
-        print(row("DOSYA", "TEPE", "ÜÇGEN", "BOYUT", "ÖLÇÜ (mm)"))
+        print(row("FILE", "VERTS", "TRIS", "SIZE", "EXTENT (mm)"))
 
         for path in paths {
             let url = URL(fileURLWithPath: path)
             guard FileManager.default.fileExists(atPath: url.path) else {
-                print("\(url.lastPathComponent): bulunamadı")
+                print("\(url.lastPathComponent): not found")
                 continue
             }
 

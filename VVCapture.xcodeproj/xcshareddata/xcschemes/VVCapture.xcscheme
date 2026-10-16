@@ -17,7 +17,7 @@
                BlueprintIdentifier = "APPTARGET"
                BuildableName = "VVCapture.app"
                BlueprintName = "VVCapture"
-               ReferencedContainer = "container:ObjectScanner.xcodeproj">
+               ReferencedContainer = "container:VVCapture.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -47,7 +47,7 @@
             BlueprintIdentifier = "APPTARGET"
             BuildableName = "VVCapture.app"
             BlueprintName = "VVCapture"
-            ReferencedContainer = "container:ObjectScanner.xcodeproj">
+            ReferencedContainer = "container:VVCapture.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -64,7 +64,7 @@
             BlueprintIdentifier = "APPTARGET"
             BuildableName = "VVCapture.app"
             BlueprintName = "VVCapture"
-            ReferencedContainer = "container:ObjectScanner.xcodeproj">
+            ReferencedContainer = "container:VVCapture.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

@@ -47,7 +47,7 @@ struct TurntableFlowView: View {
         case .idle, .preparing:
             ProgressView("Preparing camera…").tint(.white)
 
-        case .readyToDetect, .framing, .capturing:
+        case .capturing:
             if hasSeenSetupTips {
                 captureStage(engine: engine)
             } else {
@@ -334,7 +334,7 @@ private struct TurntableOverlay: View {
                 .font(.caption2.monospacedDigit())
                 .foregroundStyle(.white.opacity(0.7))
                 if !engine.canFinish {
-                    Text("en az \(TurntableCaptureEngine.minimumShots)")
+                    Text("at least \(TurntableCaptureEngine.minimumShots)")
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.7))
                 }

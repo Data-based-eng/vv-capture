@@ -48,20 +48,4 @@ enum ReconstructionStage: Int, Equatable, Sendable, CaseIterable, Identifiable {
         case .optimization: String(localized: "Optimizing model")
         }
     }
-
-    var symbolName: String {
-        switch self {
-        case .preProcessing: "photo.stack"
-        case .imageAlignment: "camera.metering.matrix"
-        case .pointCloudGeneration: "aqi.medium"
-        case .meshGeneration: "grid"
-        case .textureMapping: "paintbrush"
-        case .optimization: "wand.and.sparkles"
-        }
-    }
-
-    /// The stage most of the wall-clock goes into, worth a reassuring note.
-    var isLongRunning: Bool {
-        self == .imageAlignment || self == .meshGeneration
-    }
 }

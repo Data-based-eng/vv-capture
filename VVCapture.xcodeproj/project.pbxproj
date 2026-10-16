@@ -11,9 +11,9 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		SYNCROOTGROUP /* ObjectScanner */ = {
+		SYNCROOTGROUP /* VVCapture */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = ObjectScanner;
+			path = VVCapture;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +32,7 @@
 		MAINGROUP = {
 			isa = PBXGroup;
 			children = (
-				SYNCROOTGROUP /* ObjectScanner */,
+				SYNCROOTGROUP /* VVCapture */,
 				PRODUCTSGROUP /* Products */,
 			);
 			sourceTree = "<group>";
@@ -61,7 +61,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				SYNCROOTGROUP /* ObjectScanner */,
+				SYNCROOTGROUP /* VVCapture */,
 			);
 			name = VVCapture;
 			packageProductDependencies = (
@@ -85,7 +85,7 @@
 					};
 				};
 			};
-			buildConfigurationList = PRJCONFIGLIST /* Build configuration list for PBXProject "ObjectScanner" */;
+			buildConfigurationList = PRJCONFIGLIST /* Build configuration list for PBXProject "VVCapture" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -264,7 +264,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		PRJCONFIGLIST /* Build configuration list for PBXProject "ObjectScanner" */ = {
+		PRJCONFIGLIST /* Build configuration list for PBXProject "VVCapture" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				PRJDEBUG /* Debug */,

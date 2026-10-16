@@ -1,5 +1,11 @@
 # What limits 3D scan quality on an iPhone
 
+> Fork note: these measurements were made with the upstream
+> [ObjectScanner](https://github.com/burakSahinkaya/ObjectScanner) app, which
+> had four capture modes. VV Capture keeps only the turntable mode, so the
+> photogrammetry sections apply directly; the TrueDepth and RoomPlan sections
+> are background reading.
+
 Notes from building [ObjectScanner](https://github.com/burakSahinkaya/ObjectScanner),
 an open-source iOS scanner with four capture modes. Everything here was measured on
 device or on a Mac against real captures. Where I guessed and was wrong, that is

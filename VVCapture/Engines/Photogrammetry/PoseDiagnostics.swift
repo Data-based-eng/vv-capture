@@ -150,7 +150,7 @@ struct PoseDiagnostics: Sendable {
             // and the same single texture that a game controller gets. At room scale
             // that is roughly one triangle per 20 cm² — no amount of walking fixes it.
             if solvedSamples >= (totalSamples * 4) / 5 {
-                notes.append(String(localized: "Capture is good: frames aligned. The low quality isn't the capture — it's the on-device `reduced` level: ~25,000 triangles and a single texture spread over the whole surface. Plenty for an object, far too few for a room. Frames are saved: reprocessing on a Mac at `.raw` is the real fix."))
+                notes.append(String(localized: "Capture is good: frames aligned. The low quality isn't the capture — it's the on-device `reduced` level: ~25,000 triangles and a single texture spread over the whole surface. Plenty for a small product, far too few for anything bigger. Frames are saved: reprocessing on a Mac at `.raw` is the real fix."))
             }
         }
 

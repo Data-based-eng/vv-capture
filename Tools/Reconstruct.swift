@@ -24,9 +24,9 @@ struct Reconstruct {
 
         guard arguments.count >= 3 else {
             FileHandle.standardError.write(Data("""
-                Kullanım: reconstruct <görüntü-klasörü> <çıktı.usdz> [detay] [--room]
-                  detay: preview | reduced | medium | full | raw   (varsayılan: full)
-                  --room: obje maskelemesini kapatır (oda taramaları için)
+                Usage: reconstruct <image-folder> <output.usdz> [detail] [--room]
+                  detail: preview | reduced | medium | full | raw   (default: full)
+                  --room: disable object masking (for room scans)
                 """.utf8))
             exit(2)
         }
@@ -49,8 +49,8 @@ struct Reconstruct {
 
         let images = (try? FileManager.default.contentsOfDirectory(atPath: inputURL.path))?
             .filter { !$0.hasPrefix(".") } ?? []
-        print("Girdi: \(images.count) dosya — \(inputURL.path)")
-        print("Detay: \(detailName)\(isRoom ? " · oda modu (maskeleme kapalı)" : "")")
+        print("Input: \(images.count) files — \(inputURL.path)")
+        print("Detail: \(detailName)\(isRoom ? " · room mode (masking off)" : "")")
         reportDepthAvailability(in: inputURL, sample: images.first)
 
         // Checkpoints let an interrupted run resume instead of restarting, which
@@ -73,7 +73,7 @@ struct Reconstruct {
             session = try PhotogrammetrySession(input: inputURL, configuration: configuration)
             try session.process(requests: [.modelFile(url: outputURL, detail: detail)])
         } catch {
-            FileHandle.standardError.write(Data("Oturum başlatılamadı: \(error)\n".utf8))
+            FileHandle.standardError.write(Data("Could not start session: \(error)\n".utf8))
             exit(1)
         }
 
@@ -94,17 +94,17 @@ struct Reconstruct {
 
                 case .requestProgressInfo(_, let info):
                     if let stage = info.processingStage {
-                        print("Aşama: \(stage)")
+                        print("Stage: \(stage)")
                     }
 
                 case .requestComplete(_, let result):
                     if case .modelFile(let url) = result {
-                        print("Model yazıldı: \(url.path)")
+                        print("Model written: \(url.path)")
                     }
 
                 case .processingComplete:
                     let elapsed = Int(Date().timeIntervalSince(started))
-                    print("Tamamlandı — \(elapsed / 60) dakika \(elapsed % 60) saniye")
+                    print("Done — \(elapsed / 60) min \(elapsed % 60) s")
                     reportSize(of: outputURL)
                     exit(0)
 
@@ -113,31 +113,31 @@ struct Reconstruct {
                     exit(1)
 
                 case .processingCancelled:
-                    FileHandle.standardError.write(Data("İptal edildi.\n".utf8))
+                    FileHandle.standardError.write(Data("Cancelled.\n".utf8))
                     exit(1)
 
                 case .invalidSample(let id, let reason):
-                    print("Geçersiz örnek \(id): \(reason)")
+                    print("Invalid sample \(id): \(reason)")
 
                 case .skippedSample(let id):
-                    print("Atlanan örnek \(id)")
+                    print("Skipped sample \(id)")
 
                 case .automaticDownsampling:
                     // Worth surfacing: it silently caps the detail the run can reach.
-                    print("UYARI: bellek yetersizliği nedeniyle otomatik küçültme yapıldı")
+                    print("WARNING: ran low on memory, quality was reduced automatically")
 
                 case .stitchingIncomplete:
-                    print("UYARI: birleştirme tamamlanamadı — model eksik olabilir")
+                    print("WARNING: fusion did not finish — the model may be incomplete")
 
                 case .inputComplete:
-                    print("Girdi okundu, çözüm başlıyor…")
+                    print("Input read, solving…")
 
                 @unknown default:
                     break
                 }
             }
         } catch {
-            FileHandle.standardError.write(Data("Akış hatası: \(error)\n".utf8))
+            FileHandle.standardError.write(Data("Stream error: \(error)\n".utf8))
             exit(1)
         }
 
@@ -164,8 +164,8 @@ struct Reconstruct {
         let hasDepth = CGImageSourceCopyAuxiliaryDataInfoAtIndex(source, 0, kCGImageAuxiliaryDataTypeDepth) != nil
             || CGImageSourceCopyAuxiliaryDataInfoAtIndex(source, 0, kCGImageAuxiliaryDataTypeDisparity) != nil
         print(hasDepth
-              ? "Derinlik verisi: var — model gerçek boyutta olacak"
-              : "Derinlik verisi: YOK — model ölçeksiz çıkacak")
+              ? "Depth data: present — the model will be true to scale"
+              : "Depth data: MISSING — the model will have no scale")
     }
 
     private static func reportSize(of url: URL) {

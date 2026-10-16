@@ -27,7 +27,7 @@ struct RenderViews {
     static func main() {
         let arguments = CommandLine.arguments
         guard arguments.count >= 3 else {
-            FileHandle.standardError.write(Data("Kullanım: renderviews <model> <çıktı-öneki> [boyut]\n".utf8))
+            FileHandle.standardError.write(Data("Usage: renderviews <model> <output-prefix> [size]\n".utf8))
             exit(2)
         }
 
@@ -36,7 +36,7 @@ struct RenderViews {
         let size = arguments.count > 3 ? (Int(arguments[3]) ?? 1000) : 1000
 
         guard let device = MTLCreateSystemDefaultDevice() else {
-            FileHandle.standardError.write(Data("Metal cihazı yok.\n".utf8))
+            FileHandle.standardError.write(Data("No Metal device.\n".utf8))
             exit(1)
         }
 
@@ -44,7 +44,7 @@ struct RenderViews {
         do {
             scene = try SCNScene(url: modelURL, options: [.checkConsistency: false])
         } catch {
-            FileHandle.standardError.write(Data("Model açılamadı: \(error)\n".utf8))
+            FileHandle.standardError.write(Data("Could not open model: \(error)\n".utf8))
             exit(1)
         }
 
@@ -58,7 +58,7 @@ struct RenderViews {
         scene.rootNode.addChildNode(ambient)
 
         let (center, radius) = bounds(of: scene.rootNode)
-        print("Merkez: \(center)  yarıçap: \(String(format: "%.2f", radius)) m")
+        print("Center: \(center)  radius: \(String(format: "%.2f", radius)) m")
 
         let camera = SCNNode()
         camera.camera = SCNCamera()
@@ -95,11 +95,11 @@ struct RenderViews {
                   let bitmap = NSBitmapImageRep(data: tiff),
                   let png = bitmap.representation(using: .png, properties: [:])
             else {
-                FileHandle.standardError.write(Data("PNG üretilemedi: \(viewpoint.name)\n".utf8))
+                FileHandle.standardError.write(Data("Could not write PNG: \(viewpoint.name)\n".utf8))
                 continue
             }
             try? png.write(to: url)
-            print("Yazıldı: \(url.lastPathComponent)")
+            print("Wrote: \(url.lastPathComponent)")
         }
     }
 
