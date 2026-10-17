@@ -44,6 +44,8 @@ enum ScanPhase: Equatable, Sendable {
     case idle
     case preparing
     case capturing(shots: Int, limit: Int)
+    /// Video take pipeline: measuring rotation, then extracting sharp frames.
+    case processingVideo(VideoProcessingProgress)
     case reconstructing(ReconstructionProgress)
     case done(ScanRecord)
     case failed(message: String)
@@ -55,6 +57,13 @@ enum ScanPhase: Equatable, Sendable {
         default: false
         }
     }
+}
+
+/// Progress of the video take pipeline (rotation measurement, then frame
+/// extraction), reported before reconstruction begins.
+struct VideoProcessingProgress: Equatable, Sendable {
+    var fraction: Double = 0
+    var stage: String?
 }
 
 enum ScanEngineError: LocalizedError {

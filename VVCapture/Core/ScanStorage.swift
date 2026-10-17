@@ -18,6 +18,10 @@ struct ScanWorkspace: Sendable {
     var checkpointURL: URL { root.appending(path: "checkpoint", directoryHint: .isDirectory) }
 
     var modelURL: URL { root.appending(path: "model.usdz", directoryHint: .notDirectory) }
+
+    /// Turntable video take. The frame extractor reads this; the stills path
+    /// ignores it.
+    var videoURL: URL { root.appending(path: "video.mp4", directoryHint: .notDirectory) }
 }
 
 /// Owns the on-disk scan library.

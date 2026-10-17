@@ -150,6 +150,17 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
         }
     }
 
+    /// Synchronous stop. The engine uses this when handing the camera to the
+    /// video session: `stop()` dispatches async, which would race the video
+    /// session's `startRunning()` for the same physical device.
+    /// Must not be called from `sessionQueue` itself.
+    func stopSync() {
+        sessionQueue.sync { [weak self] in
+            guard let self, self.session.isRunning else { return }
+            self.session.stopRunning()
+        }
+    }
+
     /// Resolves once every in-flight capture has reported back.
     ///
     /// `finish()` waits on this before reconstructing: without it, a photo whose

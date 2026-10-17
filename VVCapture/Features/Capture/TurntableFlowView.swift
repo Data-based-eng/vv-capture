@@ -65,6 +65,9 @@ struct TurntableFlowView: View {
                 }
             }
 
+        case .processingVideo(let progress):
+            TurntableVideoProcessingView(progress: progress)
+
         case .reconstructing(let progress):
             TurntableReconstructionView(progress: progress)
 
@@ -303,6 +306,18 @@ private struct TurntableOverlay: View {
     var body: some View {
         VStack(spacing: 0) {
             topBar
+            // Coverage readout: the 3D ring shows where in space each image was
+            // taken, the notches show which sides are captured. Tied to the
+            // engine's shots-per-revolution so the ring always means one turn.
+            HStack {
+                CoverageCard(
+                    indices: engine.capturedShotIndices,
+                    notchCount: TurntableCaptureEngine.shotsPerRevolution
+                )
+                .frame(width: 148)
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 10)
             Spacer(minLength: 0)
             if let reason = engine.lastRejectionReason, engine.rejectedShots > 0 {
                 Label(reason, systemImage: "camera.metering.none")
@@ -410,7 +425,15 @@ private struct TurntableOverlay: View {
             // Prompted at the moment it becomes actionable rather than buried in the
             // setup guide: a single ring of camera positions is the measured cause
             // of soft top and bottom surfaces.
-            if engine.shouldChangeElevation {
+            if engine.isRecordingVideo {
+                HStack(spacing: 8) {
+                    PulsingDot()
+                    Text("Recording video — rotate the turntable at a steady speed")
+                        .font(.footnote)
+                        .foregroundStyle(Brand.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+            } else if engine.shouldChangeElevation {
                 Label(
                     "One revolution done — change the phone's height or angle and shoot another",
                     systemImage: "arrow.up.and.down.circle.fill"
@@ -446,12 +469,13 @@ private struct TurntableOverlay: View {
                     }
                 }
                 .buttonStyle(BrandSecondaryButton())
-                .disabled(engine.lockState == .locking || engine.lockState == .locked)
+                .disabled(engine.lockState == .locking || engine.lockState == .locked || engine.isRecordingVideo)
 
                 Button(engine.isAutoCapturing ? "Stop Auto" : "Auto Capture") {
                     engine.toggleAutoCapture()
                 }
                 .buttonStyle(BrandSecondaryButton())
+                .disabled(engine.isRecordingVideo)
 
                 Button {
                     engine.captureNow()
@@ -463,13 +487,27 @@ private struct TurntableOverlay: View {
                         .accessibilityLabel(String(localized: "Take photo"))
                 }
                 .buttonStyle(BrandSecondaryButton())
-                .disabled(engine.isAutoCapturing)
+                .disabled(engine.isAutoCapturing || engine.isRecordingVideo)
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .stroke(Brand.phosphor, lineWidth: 2)
                         .scaleEffect(rippleScale)
                         .opacity(rippleOpacity)
                 }
+
+                Button {
+                    engine.toggleVideoRecording()
+                } label: {
+                    Image(systemName: engine.isRecordingVideo ? "stop.fill" : "video.fill")
+                        .font(.title3)
+                        .foregroundStyle(engine.isRecordingVideo ? Brand.danger : Brand.textPrimary)
+                        .frame(width: 56, height: 48)
+                        .accessibilityLabel(engine.isRecordingVideo
+                            ? String(localized: "Stop recording video")
+                            : String(localized: "Record video"))
+                }
+                .buttonStyle(BrandSecondaryButton())
+                .disabled(engine.isAutoCapturing)
             }
 
             Button {
@@ -583,6 +621,43 @@ private struct TurntableReconstructionView: View {
             .staggerIn(delay: 0.05)
         }
         .animation(.easeInOut(duration: 0.3), value: progress.stage?.rawValue ?? -1)
+        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
+        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
+    }
+}
+
+/// Processing screen for a video take: measures the rotation, then extracts
+/// the sharpest frame around each target angle before reconstruction.
+private struct TurntableVideoProcessingView: View {
+    let progress: VideoProcessingProgress
+
+    var body: some View {
+        ZStack {
+            Brand.ink.ignoresSafeArea()
+            RuneWatermark()
+                .frame(width: 280, height: 280)
+            GrainOverlay()
+
+            VStack(spacing: 18) {
+                ShimmerProgressBar(fraction: progress.fraction)
+                    .frame(maxWidth: 240)
+
+                Text(progress.stage ?? String(localized: "Processing video"))
+                    .font(.headline)
+                    .foregroundStyle(Brand.textPrimary)
+                    .id(progress.stage ?? "")
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+
+                Text("Don't background the app.")
+                    .font(.footnote)
+                    .foregroundStyle(Brand.textTertiary)
+            }
+            .padding(28)
+            .depthPanel()
+            .padding(.horizontal, 40)
+            .staggerIn(delay: 0.05)
+        }
+        .animation(.easeInOut(duration: 0.3), value: progress.stage ?? "")
         .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
         .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
     }

@@ -38,6 +38,14 @@ final class TurntableCaptureEngine: ScanEngine {
     /// Used only to prompt for a second pass at a different height.
     static let shotsPerRevolution = 36
 
+    /// Views extracted from one video take (7.5° apart).
+    static let videoViews = 48
+
+    /// Nominal seconds per turntable revolution, used only when the rim marker
+    /// can't be measured in the footage. The turntable app's speed setting is
+    /// the source of truth — match this to it.
+    var videoRevSeconds: Double = 60
+
     /// Turntable speed in revolutions per minute, when known. The auto-capture
     /// interval is derived from it so shots land ~10° apart at any speed.
     /// Nil means unknown — the yaw manifest's timestamps let \u03b8 backfill
@@ -65,6 +73,10 @@ final class TurntableCaptureEngine: ScanEngine {
 
     private(set) var phase: ScanPhase = .idle
     private(set) var shotCount = 0
+    /// Saved shot indices in capture order. Drives the coverage overlay: the
+    /// index (not the count) sets each notch's nominal angle, so blur-rejected
+    /// gaps don't shift the ring.
+    private(set) var capturedShotIndices: [Int] = []
     private(set) var isAutoCapturing = false
     private(set) var deliversDepth = false
     private(set) var megapixels = 0
@@ -83,6 +95,11 @@ final class TurntableCaptureEngine: ScanEngine {
     }
     private(set) var rejectedShots = 0
     private(set) var lastRejectionReason: String?
+    /// True while the turntable video take is recording. The photo session is
+    /// parked for the duration — AVFoundation runs one session per camera.
+    private(set) var isRecordingVideo = false
+    /// Workspace video file once a take finalises.
+    private(set) var recordedVideoURL: URL?
 
     /// Region of every frame that contains the object, in 0…1 image coordinates.
     ///
@@ -93,16 +110,21 @@ final class TurntableCaptureEngine: ScanEngine {
 
     var session: AVCaptureSession? { coordinator?.session }
 
-    var canFinish: Bool { shotCount >= Self.minimumShots }
+    /// Stills need enough frames to close the loop. A finished video take is
+    /// processed into `videoViews` views, which always suffices.
+    var canFinish: Bool { shotCount >= Self.minimumShots || recordedVideoURL != nil }
 
     // MARK: - Private
 
     private let storage: ScanStorage
     private let reconstructor = PhotogrammetryReconstructor()
     private var coordinator: PhotoCaptureCoordinator?
+    private var videoCoordinator: VideoCaptureCoordinator?
     private var workspace: ScanWorkspace?
     private var yawManifest: YawManifest?
     private var autoCaptureTask: Task<Void, Never>?
+    /// The detached video processing task, so `cancel()` can stop it mid-run.
+    private var videoProcessTask: Task<VideoProcessResult, Error>?
     /// Set by `cancel()`. `finish()` checks it at every await boundary so a
     /// cancel that lands mid-reconstruction produces `.cancelled` — never a
     /// `.failed` for a workspace that was deliberately discarded, and never a
@@ -163,6 +185,26 @@ final class TurntableCaptureEngine: ScanEngine {
         megapixels = coordinator.megapixels
         coordinator.start()
 
+        // Video runs on its own session because AVFoundation allows only one
+        // running session per camera. A video failure must not fail capture:
+        // stills keep working.
+        let video = VideoCaptureCoordinator(
+            videoURL: workspace.videoURL,
+            onFinishedRecording: { [weak self] url in
+                Task { @MainActor in self?.recordedVideoURL = url }
+            },
+            onFailure: { [weak self] message in
+                Task { @MainActor in self?.captureError = message }
+            }
+        )
+        do {
+            try video.configure()
+            self.videoCoordinator = video
+        } catch {
+            warnings.append("Video capture unavailable: \(error.localizedDescription)")
+            Self.logger.error("Video coordinator configuration failed: \(error.localizedDescription, privacy: .public)")
+        }
+
         phase = .capturing(shots: 0, limit: 0)
     }
 
@@ -173,6 +215,13 @@ final class TurntableCaptureEngine: ScanEngine {
 
         stopAutoCapture()
         coordinator.stop()
+
+        // A recording left running would keep writing while the solver reads
+        // the workspace. Stop it and wait for the file to finalise first.
+        if isRecordingVideo {
+            stopVideoRecording()
+            await videoCoordinator?.awaitFinalized()
+        }
 
         // A photo whose delegate hasn't fired yet must not land after the
         // reconstruction input was enumerated — or after teardown, with no yaw
@@ -185,12 +234,62 @@ final class TurntableCaptureEngine: ScanEngine {
             throw ScanEngineError.cancelled
         }
 
-        guard shotCount > 0 else {
+        // Video take → measured yaw + sharp frames straight into the images
+        // directory. The reconstructor below then treats them exactly like
+        // stills, and the yaw manifest carries their angles.
+        var videoFrameCount = 0
+        if let videoURL = recordedVideoURL, let manifest = yawManifest {
+            phase = .processingVideo(VideoProcessingProgress(stage: "Measuring rotation"))
+            // Read the MainActor-isolated setting before detaching: the
+            // detached closure can't touch engine state.
+            let nominalRevSeconds = videoRevSeconds
+            do {
+                let processTask = Task.detached {
+                    try await VideoPipeline.process(
+                        videoURL: videoURL,
+                        imagesURL: workspace.imagesURL,
+                        manifest: manifest,
+                        nominalRevSeconds: nominalRevSeconds,
+                        views: Self.videoViews
+                    ) { [weak self] progress in
+                        Task { @MainActor in
+                            guard let self, case .processingVideo = self.phase else { return }
+                            self.phase = .processingVideo(progress)
+                        }
+                    }
+                }
+                videoProcessTask = processTask
+                let result = try await processTask.value
+                videoProcessTask = nil
+                videoFrameCount = result.frameCount
+                if let warning = result.warning { warnings.append(warning) }
+            } catch {
+                videoProcessTask = nil
+                if error is CancellationError || isCancelled {
+                    storage.discard(workspace)
+                    teardown()
+                    phase = .cancelled
+                    throw ScanEngineError.cancelled
+                }
+                phase = .failed(message: error.localizedDescription)
+                throw error
+            }
+        }
+
+        // A cancel may have landed during video processing.
+        guard !isCancelled else {
+            storage.discard(workspace)
+            teardown()
+            phase = .cancelled
+            throw ScanEngineError.cancelled
+        }
+
+        guard shotCount + videoFrameCount > 0 else {
             phase = .failed(message: String(localized: "No photos were taken."))
             throw ScanEngineError.noImagesCaptured
         }
 
-        let capturedShots = shotCount
+        let capturedShots = shotCount + videoFrameCount
         phase = .reconstructing(ReconstructionProgress())
 
         let output: PhotogrammetryReconstructor.Output
@@ -254,6 +353,15 @@ final class TurntableCaptureEngine: ScanEngine {
         isCancelled = true
         stopAutoCapture()
         coordinator?.stop()
+        if isRecordingVideo {
+            isRecordingVideo = false
+            videoCoordinator?.stopRecording()
+        }
+        videoCoordinator?.stop()
+        // A detached processing task keeps no reference to the engine, so it
+        // must be stopped explicitly — otherwise it would keep writing frames
+        // into a workspace finish() has already discarded.
+        videoProcessTask?.cancel()
         // During reconstruction the solver still owns the workspace directory;
         // deleting it now would corrupt the in-flight session. finish()
         // observes isCancelled at its next await boundary, discards the
@@ -274,7 +382,9 @@ final class TurntableCaptureEngine: ScanEngine {
     /// rather than left on automatic: drifting between frames is what breaks the
     /// solve, and a turntable holds the subject at a fixed distance anyway.
     func lockCameraSettings() {
-        guard lockState != .locking else { return }
+        // Locking the stills device mid-recording would move exposure under the
+        // video take. The video path locks its own device when recording starts.
+        guard lockState != .locking, !isRecordingVideo else { return }
         lockState = .locking
         coordinator?.lockCameraSettings { [weak self] success in
             Task { @MainActor in
@@ -285,12 +395,12 @@ final class TurntableCaptureEngine: ScanEngine {
     }
 
     func captureNow() {
-        guard case .capturing = phase else { return }
+        guard case .capturing = phase, !isRecordingVideo else { return }
         coordinator?.capture()
     }
 
     func toggleAutoCapture() {
-        guard case .capturing = phase else { return }
+        guard case .capturing = phase, !isRecordingVideo else { return }
         isAutoCapturing ? stopAutoCapture() : startAutoCapture()
     }
 
@@ -315,6 +425,39 @@ final class TurntableCaptureEngine: ScanEngine {
         autoCaptureTask = nil
     }
 
+    // MARK: - Video
+
+    /// Toggles the turntable video take. The photo session is parked while the
+    /// video session owns the camera, and restarted afterwards — AVFoundation
+    /// runs one session per physical device.
+    func toggleVideoRecording() {
+        guard case .capturing = phase else { return }
+        isRecordingVideo ? stopVideoRecording() : startVideoRecording()
+    }
+
+    private func startVideoRecording() {
+        guard let video = videoCoordinator, !isRecordingVideo else { return }
+        stopAutoCapture()
+        // Synchronous: the video session must not startRunning() while the
+        // photo session is still stopping on the same device.
+        coordinator?.stopSync()
+        isRecordingVideo = true
+        // Lock on the video device, then roll. A failed lock still records —
+        // unlocked footage beats no footage.
+        video.lockCameraSettings { [weak video] _ in
+            video?.startRecording()
+        }
+    }
+
+    private func stopVideoRecording() {
+        guard isRecordingVideo else { return }
+        isRecordingVideo = false
+        videoCoordinator?.stopRecording()
+        // Hand the camera back to the stills session; the movie file finalises
+        // in the background and reports via onFinishedRecording.
+        coordinator?.start()
+    }
+
     // MARK: - Private
 
     private func shotSaved(_ index: Int, takenAt: Date, sharpness: Float?) {
@@ -323,6 +466,7 @@ final class TurntableCaptureEngine: ScanEngine {
         // finish threshold, and the saved record's image count by the number of
         // rejections. The index still names the file and the yaw entry.
         shotCount += 1
+        capturedShotIndices.append(index)
         captureError = nil
         // \u03b8 itself is filled by the yaw estimator (ArUco marker on the
         // turntable edge). Until then the timestamp is the source of truth —
@@ -342,7 +486,12 @@ final class TurntableCaptureEngine: ScanEngine {
 
     private func teardown() {
         stopAutoCapture()
+        isRecordingVideo = false
         coordinator = nil
+        videoCoordinator?.stop()
+        videoCoordinator = nil
+        videoProcessTask?.cancel()
+        videoProcessTask = nil
         yawManifest = nil
         captureError = nil
     }
