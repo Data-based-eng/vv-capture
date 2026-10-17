@@ -263,7 +263,7 @@ private struct TurntableSetupGuide: View {
 
 // MARK: - Preview layer
 
-private struct CameraPreviewView: UIViewRepresentable {
+struct CameraPreviewView: UIViewRepresentable {
     let session: AVCaptureSession
     let maskFrame: CGRect
     let onMaskChange: (CGRect) -> Void
@@ -585,7 +585,7 @@ private struct PulsingDot: View {
 
 // MARK: - Reconstruction, result, message
 
-private struct TurntableReconstructionView: View {
+struct TurntableReconstructionView: View {
     let progress: ReconstructionProgress
 
     var body: some View {
@@ -628,7 +628,7 @@ private struct TurntableReconstructionView: View {
 
 /// Processing screen for a video take: measures the rotation, then extracts
 /// the sharpest frame around each target angle before reconstruction.
-private struct TurntableVideoProcessingView: View {
+struct TurntableVideoProcessingView: View {
     let progress: VideoProcessingProgress
 
     var body: some View {
@@ -700,7 +700,7 @@ private struct ShimmerProgressBar: View {
     }
 }
 
-private struct TurntableResultView: View {
+struct TurntableResultView: View {
     let record: ScanRecord
     /// Surfaced next to the result rather than only logged: if masking was skipped
     /// the model will contain background, and that is worth knowing while looking
@@ -781,7 +781,7 @@ private struct TurntableResultView: View {
     }
 }
 
-private struct TurntableMessageView: View {
+struct TurntableMessageView: View {
     let title: String
     let message: String
     let systemImage: String
@@ -817,7 +817,7 @@ private struct TurntableMessageView: View {
 }
 
 /// Draggable, pinchable rectangle marking the object.
-private struct ObjectMaskRectangle: View {
+struct ObjectMaskRectangle: View {
     @Binding var frame: CGRect
 
     @State private var dragOffset = CGSize.zero

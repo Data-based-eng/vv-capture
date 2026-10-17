@@ -137,6 +137,83 @@ struct FrameExtractor: Sendable {
         return written
     }
 
+    // MARK: - Orbit mode: time-spread extraction (no yaw)
+
+    /// Pulls one sharp frame per time window from a phone-orbit video.
+    ///
+    /// There is no turntable here, so no rotation to measure and no yaw to
+    /// assign — the photogrammetry solver computes camera poses from the
+    /// images themselves. Frames just need to be sharp and spread across the
+    /// take: each of `views` evenly spaced time windows contributes its
+    /// sharpest frame. Manifest entries carry no angle (`method: "solver"`).
+    func extractTimeSpread(
+        videoURL: URL,
+        views: Int,
+        imagesURL: URL,
+        manifest: YawManifest,
+        onProgress: @escaping @Sendable (Double) -> Void
+    ) async throws -> Int {
+        let asset = AVURLAsset(url: videoURL)
+        let duration = try await asset.load(.duration)
+        let total = CMTimeGetSeconds(duration)
+        guard total > 4 else { throw YawError.orbitVideoTooShort }
+        let baseDate = (try? FileManager.default.attributesOfItem(
+            atPath: videoURL.path(percentEncoded: false)
+        )[.creationDate] as? Date) ?? Date()
+
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.requestedTimeToleranceBefore = .zero
+        generator.requestedTimeToleranceAfter = CMTime(seconds: 0.2, preferredTimescale: 600)
+
+        // Trim a second off each end — the user is usually still settling the
+        // framing there.
+        let start = 1.0
+        let end = total - 1.0
+        let window = (end - start) / Double(views)
+
+        var written = 0
+        for i in 0..<views {
+            try Task.checkCancellation()
+            let windowStart = start + Double(i) * window
+
+            var best: (score: Float, image: CGImage, t: Double)?
+            var seen = Set<Int>()
+            for attempt in 0..<3 {
+                let requestT = windowStart + (Double(attempt) + 0.5) * (window / 3)
+                guard let (cg, actual) = try? await generatedCGImage(
+                    at: CMTime(seconds: requestT, preferredTimescale: 6000),
+                    using: generator
+                ) else { continue }
+                let at = CMTimeGetSeconds(actual)
+                guard seen.insert(Int((at * 1000).rounded())).inserted else { continue }
+                let score = Self.sharpness(of: cg)
+                if best == nil || score > best!.score {
+                    best = (score, cg, at)
+                }
+            }
+
+            if let best {
+                let url = imagesURL.appending(
+                    path: String(format: "frame_%04d.jpg", i + 1),
+                    directoryHint: .notDirectory
+                )
+                try Self.writeJPEG(best.image, to: url)
+                manifest.append(
+                    shot: i + 1,
+                    file: url.lastPathComponent,
+                    takenAt: baseDate.addingTimeInterval(best.t),
+                    thetaDeg: nil,
+                    method: "solver",
+                    sharpness: best.score
+                )
+                written += 1
+            }
+            onProgress(Double(i + 1) / Double(views))
+        }
+        return written
+    }
+
     // MARK: - Frame scoring and writing
 
     /// Gradient-energy sharpness on a downscaled copy — a relative ranking is

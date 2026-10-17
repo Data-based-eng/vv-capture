@@ -23,6 +23,7 @@ struct VideoYawAnalysis: Sendable {
 enum YawError: LocalizedError {
     case noVideoTrack
     case videoTooShort
+    case orbitVideoTooShort
     case noRotationDetected
     case frameEncodingFailed
 
@@ -32,6 +33,8 @@ enum YawError: LocalizedError {
             "The recorded file has no video track."
         case .videoTooShort:
             "The video is too short to measure rotation."
+        case .orbitVideoTooShort:
+            "The orbit video is too short — walk around the product for at least a few seconds."
         case .noRotationDetected:
             "No turntable rotation was detected in the video. Make sure the table is turning while recording, with a few seconds of still footage before and after."
         case .frameEncodingFailed:
