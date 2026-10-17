@@ -15,7 +15,8 @@ protocol ScanEngine: AnyObject {
     var phase: ScanPhase { get }
 
     /// Begin capture. Throws if the engine can't acquire the sensor.
-    func start() throws
+    /// Async because the camera-permission gate awaits the user's answer.
+    func start() async throws
 
     /// Stop capture and produce the model. The returned record is already persisted.
     func finish() async throws -> ScanRecord
@@ -43,7 +44,7 @@ enum EngineAvailability: Equatable, Sendable {
 enum ScanPhase: Equatable, Sendable {
     case idle
     case preparing
-    case capturing(shots: Int, limit: Int)
+    case capturing(shots: Int)
     /// Video take pipeline: measuring rotation, then extracting sharp frames.
     case processingVideo(VideoProcessingProgress)
     case reconstructing(ReconstructionProgress)
@@ -75,13 +76,13 @@ enum ScanEngineError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .sessionUnavailable(let detail):
-            "Couldn't start the scan session: \(detail)"
+            String(localized: "Couldn't start the scan session: \(detail)")
         case .reconstructionFailed(let detail):
-            "Couldn't create the model: \(detail)"
+            String(localized: "Couldn't create the model: \(detail)")
         case .noImagesCaptured:
             String(localized: "No images were captured. Try the scan again.")
         case .cancelled:
-            "Scan cancelled."
+            String(localized: "Scan cancelled.")
         }
     }
 }

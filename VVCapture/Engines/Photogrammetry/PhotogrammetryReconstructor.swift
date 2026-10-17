@@ -18,11 +18,38 @@ struct PhotogrammetryReconstructor {
         let poses: PoseDiagnostics?
     }
 
+    /// PhotogrammetrySession isn't Sendable, but this helper's lifecycle keeps
+    /// it confined: created here, consumed by the outputs loop below, and only
+    /// `cancel()` crosses into the `@Sendable` onCancel closure. The box
+    /// documents that manual guarantee.
+    private final class UncheckedSessionBox: @unchecked Sendable {
+        let session: PhotogrammetrySession
+        init(_ session: PhotogrammetrySession) { self.session = session }
+    }
+
+    /// Extensions the solver can actually ingest. The images directory must
+    /// contain only solver inputs: dotfile-exclusion alone let any stray file
+    /// (a renamed video, an export dropped in by mistake) reach the session.
+    private static let sourceImageExtensions: Set<String> = ["heic", "heif", "jpg", "jpeg", "png"]
+
+    private static func isSourceImage(_ url: URL) -> Bool {
+        let name = url.lastPathComponent
+        return !name.hasPrefix(".") && sourceImageExtensions.contains(url.pathExtension.lowercased())
+    }
+
     /// - Parameters:
-    ///   - maskRect: region of every frame that contains the object, in 0…1 image
-    ///     coordinates. Only meaningful when the device was stationary — see
-    ///     `MaskedSampleSequence`. Nil feeds the images directly and lets the
-    ///     session work out the object itself.
+    ///   - maskRect: region of every frame that contains the object, in
+    ///     NORMALIZED UPRIGHT-PORTRAIT image space (origin top-left, 0…1), the
+    ///     same space as the EXIF-upright portrait buffers
+    ///     `PhotogrammetrySample(contentsOf:)` hands back.
+    ///     Cross-file contract: the capture UI derotates the drag rect before it
+    ///     gets here, so `MaskedSampleSequence`/`ObjectMaskBuilder` stamp it
+    ///     WITHOUT any additional rotation. Do not derotate here — the
+    ///     sensor-native landscape space never reaches this layer.
+    ///     Only meaningful when the device was stationary — see
+    ///     `MaskedSampleSequence`. Nil feeds the images as a plain (still
+    ///     sorted) sample sequence and lets the session work out the object
+    ///     itself.
     ///   - enableObjectMasking: lets the session segment a single subject out of
     ///     each frame. Right for an object on a table, actively wrong for a room —
     ///     there the room *is* the subject, and asking for an object gets part of it
@@ -50,7 +77,7 @@ struct PhotogrammetryReconstructor {
             at: workspace.imagesURL,
             includingPropertiesForKeys: nil
         )) ?? [])
-            .filter { !$0.lastPathComponent.hasPrefix(".") }
+            .filter { Self.isSourceImage($0) }
             // Capture order is the orbit order, which is what `.sequential` promises
             // the solver — directory enumeration order is not.
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
@@ -95,18 +122,14 @@ struct PhotogrammetryReconstructor {
                 framing: framing,
                 onProgress: onProgress
             )
-        } catch {
-            if error is CancellationError { throw error }
-            if case ScanEngineError.cancelled = error {
-                // Cancellation is a decision, not a failure mode: retrying
-                // unmasked would do the opposite of what was asked.
-                throw error
-            }
-            guard effectiveMask != nil else { throw error }
-            // Masking is an optimisation, not the point. If the masked run fails for
-            // any reason, fall back to the plain folder path so the user still gets a
-            // model instead of nothing.
-            Self.logger.error("Masked run failed, retrying unmasked")
+        } catch let establishment as MaskEstablishmentError {
+            // The masked path failed at establishment time — before the solver
+            // had a chance to run — which is the only failure an unmasked retry
+            // can plausibly fix. A failure *during* the solve would fail the
+            // same way unmasked, so it is not retried: retrying would burn
+            // another multi-minute run for nothing.
+            if establishment.underlying is CancellationError { throw establishment.underlying }
+            Self.logger.error("Masked run rejected at setup, retrying unmasked: \(establishment.underlying.localizedDescription, privacy: .public)")
             await onWarning(String(localized: "Masked processing failed, retried without mask."))
             try? FileManager.default.removeItem(at: workspace.modelURL)
             return try await run(
@@ -122,6 +145,14 @@ struct PhotogrammetryReconstructor {
         }
     }
 
+    /// The masked sample path failed before the solver started. Carried
+    /// separately from `ScanEngineError` so `reconstruct()` can tell "the mask
+    /// setup was rejected" (retry unmasked) from "the solve itself failed"
+    /// (surface the error).
+    private struct MaskEstablishmentError: Error {
+        let underlying: Error
+    }
+
     private func run(
         workspace: ScanWorkspace,
         imageURLs: [URL],
@@ -133,21 +164,21 @@ struct PhotogrammetryReconstructor {
         onProgress: @escaping @MainActor (ReconstructionProgress) -> Void
     ) async throws -> Output {
 
+        let masked = maskRect != nil
         let session: PhotogrammetrySession
         do {
-            if let maskRect {
-                // Samples rather than a folder: a per-frame object mask can only be
-                // attached to a `PhotogrammetrySample`, and the mask is the one thing
-                // that reliably keeps a nearby background out of the model.
-                session = try PhotogrammetrySession(
-                    input: MaskedSampleSequence(imageURLs: imageURLs, normalizedRect: maskRect),
-                    configuration: configuration
-                )
-            } else {
-                session = try PhotogrammetrySession(input: workspace.imagesURL, configuration: configuration)
-            }
+            // Masked and unmasked both go through the sorted sample sequence,
+            // so both get deterministic order. The old unmasked path passed the
+            // raw folder URL, which made the lexicographic sort above dead code
+            // and let `.sequential` rest on OS enumeration order.
+            session = try PhotogrammetrySession(
+                input: MaskedSampleSequence(imageURLs: imageURLs, normalizedRect: maskRect),
+                configuration: configuration
+            )
         } catch {
-            throw ScanEngineError.reconstructionFailed(error.localizedDescription)
+            let mapped = ScanEngineError.reconstructionFailed(error.localizedDescription)
+            if masked { throw MaskEstablishmentError(underlying: mapped) }
+            throw mapped
         }
 
         let modelRequest = PhotogrammetrySession.Request.modelFile(
@@ -156,71 +187,93 @@ struct PhotogrammetryReconstructor {
         )
         // The poses request rides along on alignment work the session already does,
         // so it costs almost nothing and turns "bad quality" into three numbers.
-        try session.process(requests: [modelRequest, .poses])
+        do {
+            try session.process(requests: [modelRequest, .poses])
+        } catch {
+            // `process()` throws are establishment-time too — the session never
+            // started solving.
+            let mapped = ScanEngineError.reconstructionFailed(error.localizedDescription)
+            if masked { throw MaskEstablishmentError(underlying: mapped) }
+            throw mapped
+        }
 
         // Fraction and stage arrive on two different outputs and interleave, so
         // both are accumulated here and emitted as one value.
         var progress = ReconstructionProgress()
         var diagnostics: PoseDiagnostics?
 
-        for try await output in session.outputs {
-            switch output {
-            case .requestProgress(let request, let fraction):
-                // Two requests report progress independently; showing both would
-                // make the bar jump backwards.
-                guard request == modelRequest else { break }
-                progress.fraction = fraction
-                await onProgress(progress)
+        // Cancelling the Swift Task alone does NOTHING to PhotogrammetrySession:
+        // the GPU pipeline keeps running until `session.cancel()` is called.
+        // `cancel()` is asynchronous — it only *requests* the stop, and is a
+        // no-op if the session isn't processing — so this function does not
+        // return (and no new session is started) until the outputs stream
+        // delivers `.processingCancelled`, which the loop below converts to
+        // `ScanEngineError.cancelled`.
+        // Box the session for the @Sendable onCancel closure (see
+        // UncheckedSessionBox): the outputs loop above uses `session` directly.
+        let sessionBox = UncheckedSessionBox(session)
+        // The operation closure must return on every path: if the outputs
+        // stream ends without `.processingComplete`, trust the file system
+        // rather than guessing.
+        return try await withTaskCancellationHandler {
+            for try await output in session.outputs {
+                switch output {
+                case .requestProgress(let request, let fraction):
+                    // Two requests report progress independently; showing both would
+                    // make the bar jump backwards.
+                    guard request == modelRequest else { break }
+                    progress.fraction = fraction
+                    await onProgress(progress)
 
-            case .requestProgressInfo(let request, let info):
-                guard request == modelRequest else { break }
-                progress.stage = info.processingStage.flatMap(ReconstructionStage.init)
-                progress.estimatedRemaining = info.estimatedRemainingTime
-                await onProgress(progress)
+                case .requestProgressInfo(let request, let info):
+                    guard request == modelRequest else { break }
+                    progress.stage = info.processingStage.flatMap(ReconstructionStage.init)
+                    progress.estimatedRemaining = info.estimatedRemainingTime
+                    await onProgress(progress)
 
-            case .requestComplete(let request, let result):
-                if case .poses(let poses) = result {
-                    diagnostics = PoseDiagnostics(poses: poses, totalSamples: imageCount, framing: framing)
-                }
-                guard request == modelRequest else { break }
-                progress.fraction = 1
-                await onProgress(progress)
+                case .requestComplete(let request, let result):
+                    if case .poses(let poses) = result {
+                        diagnostics = PoseDiagnostics(poses: poses, totalSamples: imageCount, framing: framing)
+                    }
+                    guard request == modelRequest else { break }
+                    progress.fraction = 1
+                    await onProgress(progress)
 
-            case .processingComplete:
-                Self.logger.info("Reconstruction complete: \(imageCount, privacy: .public) images")
-                if let diagnostics {
-                    Self.logger.info("Pose diagnostics: \(diagnostics.summaryText, privacy: .public)")
-                }
-                return Output(modelURL: workspace.modelURL, poses: diagnostics)
+                case .processingComplete:
+                    Self.logger.info("Reconstruction complete: \(imageCount, privacy: .public) images")
+                    if let diagnostics {
+                        Self.logger.info("Pose diagnostics: \(diagnostics.summaryText, privacy: .public)")
+                    }
+                    return Output(modelURL: workspace.modelURL, poses: diagnostics)
 
-            case .requestError(let request, let error):
-                // A failed poses request must not cost the user their model.
-                guard request == modelRequest else {
-                    Self.logger.error("Pose request failed: \(error.localizedDescription, privacy: .public)")
+                case .requestError(let request, let error):
+                    // A failed poses request must not cost the user their model.
+                    guard request == modelRequest else {
+                        Self.logger.error("Pose request failed: \(error.localizedDescription, privacy: .public)")
+                        break
+                    }
+                    throw ScanEngineError.reconstructionFailed(error.localizedDescription)
+
+                case .processingCancelled:
+                    throw ScanEngineError.cancelled
+
+                case .invalidSample(let id, let reason):
+                    Self.logger.debug("Invalid sample \(id, privacy: .public): \(reason, privacy: .public)")
+
+                case .skippedSample, .automaticDownsampling, .inputComplete, .stitchingIncomplete:
+                    break
+
+                @unknown default:
                     break
                 }
-                throw ScanEngineError.reconstructionFailed(error.localizedDescription)
-
-            case .processingCancelled:
-                throw ScanEngineError.cancelled
-
-            case .invalidSample(let id, let reason):
-                Self.logger.debug("Invalid sample \(id, privacy: .public): \(reason, privacy: .public)")
-
-            case .skippedSample, .automaticDownsampling, .inputComplete, .stitchingIncomplete:
-                break
-
-            @unknown default:
-                break
             }
+            guard FileManager.default.fileExists(atPath: workspace.modelURL.path(percentEncoded: false)) else {
+                throw ScanEngineError.reconstructionFailed(String(localized: "Session ended without producing a model."))
+            }
+            return Output(modelURL: workspace.modelURL, poses: diagnostics)
+        } onCancel: {
+            sessionBox.session.cancel()
         }
-
-        // The stream ended without `.processingComplete`. Trust the file system
-        // rather than guessing.
-        guard FileManager.default.fileExists(atPath: workspace.modelURL.path(percentEncoded: false)) else {
-            throw ScanEngineError.reconstructionFailed(String(localized: "Session ended without producing a model."))
-        }
-        return Output(modelURL: workspace.modelURL, poses: diagnostics)
     }
 }
 

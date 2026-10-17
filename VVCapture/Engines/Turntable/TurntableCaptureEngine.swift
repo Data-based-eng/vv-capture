@@ -137,9 +137,21 @@ final class TurntableCaptureEngine: ScanEngine {
 
     // MARK: - ScanEngine
 
-    func start() throws {
-        guard case .available = Self.availability else {
-            throw ScanEngineError.sessionUnavailable(Self.availability.blockedReason ?? "Unknown reason")
+    func start() async throws {
+        // C1: the camera permission prompt must fire before any session is
+        // created. Without this, a fresh install starts a black preview and
+        // every capture tap silently no-ops. The denial message surfaces in
+        // the view's startupError via the thrown error below, and no engine
+        // state or capture session is created.
+        guard await CameraPermission.ensureVideoAccess() else {
+            let message = CameraPermission.denialMessage
+            phase = .failed(message: message)
+            throw ScanEngineError.sessionUnavailable(message)
+        }
+        resetSessionState()
+
+        guard Self.availability.isUsable else {
+            throw ScanEngineError.sessionUnavailable(Self.availability.blockedReason ?? String(localized: "Unknown reason"))
         }
 
         phase = .preparing
@@ -201,16 +213,19 @@ final class TurntableCaptureEngine: ScanEngine {
             try video.configure()
             self.videoCoordinator = video
         } catch {
-            warnings.append("Video capture unavailable: \(error.localizedDescription)")
+            warnings.append(String(localized: "Video capture unavailable: \(error.localizedDescription)"))
             Self.logger.error("Video coordinator configuration failed: \(error.localizedDescription, privacy: .public)")
         }
 
-        phase = .capturing(shots: 0, limit: 0)
+        phase = .capturing(shots: 0)
     }
 
     func finish() async throws -> ScanRecord {
+        // finish() after cancel() must report cancellation, not "No active
+        // session": cancel() may already have torn the session down.
+        guard !isCancelled else { throw ScanEngineError.cancelled }
         guard let coordinator, let workspace else {
-            throw ScanEngineError.sessionUnavailable("No active session.")
+            throw ScanEngineError.sessionUnavailable(String(localized: "No active session."))
         }
 
         stopAutoCapture()
@@ -218,9 +233,25 @@ final class TurntableCaptureEngine: ScanEngine {
 
         // A recording left running would keep writing while the solver reads
         // the workspace. Stop it and wait for the file to finalise first.
+        //
+        // M17: the stills session stays parked and the video session is
+        // stopped outright here — the two heaviest phases (video processing,
+        // reconstruction) don't need the camera, and it competes with
+        // compute for power/thermal headroom. Apple: "call stopRunning() at
+        // the earliest opportunity."
         if isRecordingVideo {
-            stopVideoRecording()
-            await videoCoordinator?.awaitFinalized()
+            stopVideoRecording(restartStills: false)
+            // M16: awaitFinalized() hands the URL back directly instead of
+            // assigning it across a MainActor hop (which could land after
+            // this await, silently dropping the take so the model built from
+            // stills with no warning).
+            if let finalizedURL = await videoCoordinator?.awaitFinalized() {
+                recordedVideoURL = finalizedURL
+            } else {
+                warnings.append(String(localized: "The video take didn't finalise; the model will be built from stills only."))
+                Self.logger.warning("Video take dropped: awaitFinalized() returned nil; building from stills.")
+            }
+            videoCoordinator?.stop()
         }
 
         // A photo whose delegate hasn't fired yet must not land after the
@@ -239,10 +270,15 @@ final class TurntableCaptureEngine: ScanEngine {
         // stills, and the yaw manifest carries their angles.
         var videoFrameCount = 0
         if let videoURL = recordedVideoURL, let manifest = yawManifest {
-            phase = .processingVideo(VideoProcessingProgress(stage: "Measuring rotation"))
-            // Read the MainActor-isolated setting before detaching: the
+            phase = .processingVideo(VideoProcessingProgress(stage: String(localized: "Measuring rotation")))
+            // Read the MainActor-isolated settings before detaching: the
             // detached closure can't touch engine state.
             let nominalRevSeconds = videoRevSeconds
+            // Video frames continue the stills' numbering so the images
+            // directory sorts in capture order and yaw-manifest `shot`
+            // indices stay unique. Gaps from blur-rejected shots are fine —
+            // what matters is no overlap.
+            let firstVideoShotIndex = (capturedShotIndices.max() ?? 0) + 1
             do {
                 let processTask = Task.detached {
                     try await VideoPipeline.process(
@@ -250,7 +286,8 @@ final class TurntableCaptureEngine: ScanEngine {
                         imagesURL: workspace.imagesURL,
                         manifest: manifest,
                         nominalRevSeconds: nominalRevSeconds,
-                        views: Self.videoViews
+                        views: Self.videoViews,
+                        firstShotIndex: firstVideoShotIndex
                     ) { [weak self] progress in
                         Task { @MainActor in
                             guard let self, case .processingVideo = self.phase else { return }
@@ -268,9 +305,17 @@ final class TurntableCaptureEngine: ScanEngine {
                 if error is CancellationError || isCancelled {
                     storage.discard(workspace)
                     teardown()
+                    self.workspace = nil
                     phase = .cancelled
                     throw ScanEngineError.cancelled
                 }
+                // M18: a failed attempt strands GB-scale 4K video plus
+                // extracted frames. The OS gives no guarantee of ever
+                // sweeping tmp/, so discard the workspace explicitly, like
+                // the cancel path does.
+                storage.discard(workspace)
+                teardown()
+                self.workspace = nil
                 phase = .failed(message: error.localizedDescription)
                 throw error
             }
@@ -342,7 +387,7 @@ final class TurntableCaptureEngine: ScanEngine {
             detail: .reduced,
             summary: output.poses?.summaryText
         )
-        storage.commit(record, workspace: workspace)
+        try storage.commit(record, workspace: workspace)
 
         teardown()
         phase = .done(record)
@@ -350,6 +395,10 @@ final class TurntableCaptureEngine: ScanEngine {
     }
 
     func cancel() {
+        // A finished or failed scan is terminal: cancelling now would clobber
+        // the outcome phase (and, on the capturing branch below, discard a
+        // workspace that finish() has already committed).
+        guard !phase.isTerminal else { return }
         isCancelled = true
         stopAutoCapture()
         coordinator?.stop()
@@ -437,6 +486,10 @@ final class TurntableCaptureEngine: ScanEngine {
 
     private func startVideoRecording() {
         guard let video = videoCoordinator, !isRecordingVideo else { return }
+        // A previous take's URL must not survive into a new recording:
+        // canFinish() reads it, and a stale URL would let finish() reach
+        // for a discarded file.
+        recordedVideoURL = nil
         stopAutoCapture()
         // Synchronous: the video session must not startRunning() while the
         // photo session is still stopping on the same device.
@@ -449,13 +502,20 @@ final class TurntableCaptureEngine: ScanEngine {
         }
     }
 
-    private func stopVideoRecording() {
+    private func stopVideoRecording(restartStills: Bool = true) {
         guard isRecordingVideo else { return }
         isRecordingVideo = false
         videoCoordinator?.stopRecording()
         // Hand the camera back to the stills session; the movie file finalises
         // in the background and reports via onFinishedRecording.
-        coordinator?.start()
+        //
+        // M17: finish() passes restartStills: false — restarting the session
+        // right before video processing + reconstruction would hold the
+        // camera open through the two heaviest phases, burning the
+        // power/thermal headroom the solver needs.
+        if restartStills {
+            coordinator?.start()
+        }
     }
 
     // MARK: - Private
@@ -473,20 +533,49 @@ final class TurntableCaptureEngine: ScanEngine {
         // \u03b8 backfills as \u03c9\u00b7\u0394t once the RPM is known.
         yawManifest?.append(
             shot: index,
-            file: String(format: "shot_%04d.heic", index),
+            file: coordinator?.fileName(forShot: index) ?? String(format: "shot_%06d.heic", index),
             takenAt: takenAt,
             thetaDeg: nil,
             method: "timestamp",
             sharpness: sharpness
         )
         if case .capturing = phase {
-            phase = .capturing(shots: shotCount, limit: 0)
+            phase = .capturing(shots: shotCount)
         }
+    }
+
+    /// Clears per-session state so a second scan on a reused engine starts
+    /// clean. Previously start() never reset this — latent, since engines
+    /// are currently one-shot, but a stale recordedVideoURL or shotCount
+    /// would corrupt canFinish() and the coverage overlay on reuse.
+    ///
+    /// objectMaskRect is deliberately left alone: the view owns the drag
+    /// rectangle and pushes it into the engine during capture.
+    private func resetSessionState() {
+        shotCount = 0
+        capturedShotIndices = []
+        isAutoCapturing = false
+        autoCaptureTask?.cancel()
+        autoCaptureTask = nil
+        videoProcessTask?.cancel()
+        videoProcessTask = nil
+        isCancelled = false
+        isRecordingVideo = false
+        recordedVideoURL = nil
+        captureError = nil
+        rejectedShots = 0
+        lastRejectionReason = nil
+        isLocked = false
+        lockState = .unlocked
+        warnings = []
     }
 
     private func teardown() {
         stopAutoCapture()
         isRecordingVideo = false
+        // Stop the stills session before dropping the coordinator: without
+        // this the capture indicator can linger after a successful scan.
+        coordinator?.stop()
         coordinator = nil
         videoCoordinator?.stop()
         videoCoordinator = nil
@@ -500,6 +589,6 @@ final class TurntableCaptureEngine: ScanEngine {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US")
         formatter.dateFormat = "d MMM HH:mm"
-        return "Scan \(formatter.string(from: date))"
+        return String(localized: "\(Self.kind.displayName) scan \(formatter.string(from: date))")
     }
 }

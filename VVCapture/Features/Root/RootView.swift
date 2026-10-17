@@ -82,6 +82,7 @@ struct CaptureModePicker: View {
 struct RootView: View {
     @State private var mode: ScanEngineKind?
     @State private var runID = UUID()
+    @State private var showPermissionDenied = false
 
     var body: some View {
         ZStack {
@@ -92,12 +93,31 @@ struct RootView: View {
                     .transition(.opacity)
             } else {
                 CaptureModePicker { selected in
-                    mode = selected
+                    Task { await selectAfterPermission(selected) }
+                }
+                .transition(.opacity)
+            }
+
+            if showPermissionDenied {
+                CameraPermissionDeniedView {
+                    showPermissionDenied = false
                 }
                 .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.25), value: mode)
+    }
+
+    /// C1: ask for camera access before a flow is even created. The engines
+    /// gate themselves on `CameraPermission.ensureVideoAccess()` as well, but
+    /// asking up front keeps a denied user on the picker with a clear
+    /// recovery path instead of bouncing through a flow that can't start.
+    private func selectAfterPermission(_ kind: ScanEngineKind) async {
+        if await CameraPermission.ensureVideoAccess() {
+            mode = kind
+        } else {
+            showPermissionDenied = true
+        }
     }
 
     @ViewBuilder
@@ -120,4 +140,44 @@ struct RootView: View {
     RootView()
         .environment(ScanStorage())
         .preferredColorScheme(.dark)
+}
+
+/// C1 denial path: the user said no (or restricted) to camera access. Shows
+/// the recovery copy from `CameraPermission.denialMessage` with a Settings
+/// deep-link — the denial is recoverable without reinstalling.
+private struct CameraPermissionDeniedView: View {
+    var onClose: () -> Void
+
+    var body: some View {
+        ZStack {
+            Brand.ink.ignoresSafeArea()
+            GrainOverlay()
+
+            VStack(spacing: 16) {
+                Image(systemName: "video.slash.fill")
+                    .font(.largeTitle)
+                    .foregroundStyle(Brand.phosphor)
+                Text(String(localized: "Camera access needed"))
+                    .font(.headline)
+                    .foregroundStyle(Brand.textPrimary)
+                Text(CameraPermission.denialMessage)
+                    .multilineTextAlignment(.center)
+                    .font(.subheadline)
+                    .foregroundStyle(Brand.textSecondary)
+                Button(String(localized: "Open Settings")) {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .buttonStyle(BrandPrimaryButton())
+                .padding(.horizontal, 40)
+                Button(String(localized: "Close"), action: onClose)
+                    .font(.footnote)
+                    .foregroundStyle(Brand.textTertiary)
+            }
+            .padding(32)
+            .depthPanel()
+            .padding(.horizontal, 24)
+        }
+    }
 }

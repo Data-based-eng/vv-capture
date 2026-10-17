@@ -21,9 +21,6 @@ struct ScanRecord: Identifiable, Codable, Hashable, Sendable {
     /// How many stills fed the reconstruction (nil for depth-based engines).
     let imageCount: Int?
 
-    /// Points in the cloud (nil for photogrammetry).
-    var pointCount: Int?
-
     /// Physical bounding box in metres, when the engine knows it. The fastest way
     /// to sanity-check metric scale — compare it against a ruler.
     var dimensionsMillimetres: [Int]?
@@ -50,7 +47,6 @@ struct ScanRecord: Identifiable, Codable, Hashable, Sendable {
         modelFileName: String = "model.usdz",
         isMetricallyScaled: Bool,
         imageCount: Int? = nil,
-        pointCount: Int? = nil,
         dimensionsMillimetres: [Int]? = nil,
         detail: ReconstructionDetail? = nil,
         summary: String? = nil
@@ -62,7 +58,6 @@ struct ScanRecord: Identifiable, Codable, Hashable, Sendable {
         self.modelFileName = modelFileName
         self.isMetricallyScaled = isMetricallyScaled
         self.imageCount = imageCount
-        self.pointCount = pointCount
         self.dimensionsMillimetres = dimensionsMillimetres
         self.detail = detail
         self.summary = summary

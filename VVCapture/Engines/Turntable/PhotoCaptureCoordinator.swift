@@ -5,6 +5,11 @@ import os
 ///
 /// Separate from the engine because AVFoundation delivers on its own queues and
 /// wants an `NSObject` delegate, while the engine is a main-actor observable.
+///
+/// Threading contract: all session and capture-state mutation happens on
+/// `sessionQueue`. Photo-output delegate callbacks arrive on AVFoundation's
+/// callback queue and are funneled onto `sessionQueue` before touching state.
+/// `stopSync()` is the one deliberate exception — it blocks its caller.
 final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.visionvend.capture", category: "turntable")
 
@@ -16,7 +21,7 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
         var errorDescription: String? {
             switch self {
             case .noCamera: String(localized: "Rear camera not found.")
-            case .configurationFailed(let detail): "Couldn't configure the camera: \(detail)"
+            case .configurationFailed(let detail): String(localized: "Couldn't configure the camera: \(detail)")
             case .noPhotoData: String(localized: "Couldn't get photo data.")
             }
         }
@@ -33,6 +38,24 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
     /// the UI can show what it is actually capturing at.
     private(set) var megapixels = 0
 
+    /// Photo codec in use for this session, decided once the output is attached.
+    /// On every device this app supports (iOS 18+) the HEVC codec is available,
+    /// so the JPEG fallback below is effectively unreachable — but the file
+    /// extension must still match the bytes actually written.
+    private(set) var usesHEVC = false
+
+    /// File extension for stills written by this coordinator — "heic" when the
+    /// HEVC codec is in use, "jpg" for the JPEG fallback.
+    var photoFileExtension: String { usesHEVC ? "heic" : "jpg" }
+
+    /// File name for a shot index, exactly as `capture()` writes it to disk.
+    /// The engine's yaw manifest must build names with this rather than a
+    /// hardcoded ".heic", or the manifest and the directory diverge on the
+    /// JPEG-fallback path.
+    func fileName(forShot index: Int) -> String {
+        String(format: "shot_%06d.\(photoFileExtension)", index)
+    }
+
     private let photoOutput = AVCapturePhotoOutput()
     private let sessionQueue = DispatchQueue(label: "com.visionvend.capture.turntable")
     private let imagesDirectory: URL
@@ -42,23 +65,44 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
 
     /// One delegate per in-flight photo, keyed by settings id — the shape
     /// `AVCapturePhotoOutput` expects, since it only holds the delegate weakly.
+    /// A delegate stays registered until its terminal
+    /// `didFinishCaptureFor` fires: that callback, not the app's serial queue,
+    /// is what marks the photo output's internal pipeline as drained.
+    /// Guarded by `pendingLock`.
     private var pendingCaptures: [Int64: PhotoDelegate] = [:]
     private let pendingLock = NSLock()
-    /// Captures handed to the photo output whose delegate has not reported back
-    /// yet. Guarded by `pendingLock`.
-    private var pendingCount = 0
+    /// Continuations parked in `drainPendingCaptures()`, resumed when the last
+    /// in-flight delegate reports back. Guarded by `pendingLock`.
+    private var drainWaiters: [CheckedContinuation<Void, Never>] = []
 
     private var shotIndex = 0
 
-    /// Best sharpness observed this session, used as the reference for rejection.
-    /// Absolute sharpness values mean nothing across scenes; relative ones do.
-    private var bestSharpness: Float = 0
+    /// Decaying reference for the blur gate. Absolute sharpness values mean
+    /// nothing across scenes; relative ones do — but a never-decaying maximum
+    /// lets one anomalously sharp frame (or dimming light afterwards) reject
+    /// everything for the rest of the session. Every scored frame pulls the
+    /// reference toward itself (`max(sharpness, reference * decay)`), so a
+    /// lucky early frame stops dominating after a few dozen frames.
+    private var sharpnessReference: Float = 0
+    /// Per scored frame — 0.97^35 ≈ 0.34, so a stale reference halves in
+    /// roughly two dozen frames.
+    private let referenceDecay: Float = 0.97
 
-    /// A frame scoring below this fraction of the session best is discarded.
+    /// A frame scoring below this fraction of the reference is discarded.
     private let sharpnessFloor: Float = 0.45
+    /// Consecutive blur rejections. Past `maxConsecutiveRejections` the floor
+    /// relaxes to `relaxedFloor`: sustained rejection means the reference (or
+    /// the light) is wrong, not the scene, and the scan must not starve.
+    private var consecutiveRejections = 0
+    private let maxConsecutiveRejections = 8
+    private let relaxedFloor: Float = 0.15
 
     private let onShotSaved: @Sendable (Int, Date, Float?) -> Void
     private let onShotRejected: @Sendable (String) -> Void
+    /// Session-level failures only (configuration, unrecoverable session state).
+    /// Per-capture failures — a bad frame, a write error — go through
+    /// `onShotRejected`: one failing frame must never invalidate the session
+    /// or the captures still in flight.
     private let onFailure: @Sendable (String) -> Void
 
     init(
@@ -77,9 +121,13 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
     // MARK: - Lifecycle
 
     func configure() throws {
-        // Prefer the LiDAR-backed device: it is the only way to get depth attached
-        // to the photos, and depth is what carries metric scale through to the mesh.
-        let device = AVCaptureDevice.default(.builtInLiDARDepthCamera, for: .video, position: .back)
+        // The LiDAR depth camera must NEVER be the photo input: on it,
+        // fileDataRepresentation() yields depth-map data (or nil), not a color
+        // photo. Prefer the wide-angle-family color devices instead — the
+        // dual/triple virtual devices still expose depth-data delivery, so
+        // metric scale survives without sacrificing color stills.
+        let device = AVCaptureDevice.default(.builtInTripleCamera, for: .video, position: .back)
+            ?? AVCaptureDevice.default(.builtInDualCamera, for: .video, position: .back)
             ?? AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
 
         guard let device else { throw SetupError.noCamera }
@@ -91,7 +139,7 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
         do {
             let input = try AVCaptureDeviceInput(device: device)
             guard session.canAddInput(input) else {
-                throw SetupError.configurationFailed("Couldn't add input.")
+                throw SetupError.configurationFailed(String(localized: "Couldn't add input."))
             }
             session.addInput(input)
         } catch let error as SetupError {
@@ -107,6 +155,8 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
             throw SetupError.configurationFailed(String(localized: "Couldn't add photo output."))
         }
         session.addOutput(photoOutput)
+
+        usesHEVC = photoOutput.availablePhotoCodecTypes.contains(.hevc)
 
         // Must be raised on the output before any per-shot request can ask for it.
         photoOutput.maxPhotoQualityPrioritization = .quality
@@ -137,10 +187,62 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
     }
 
     func start() {
-        sessionQueue.async { [weak self] in
-            guard let self, !self.session.isRunning else { return }
-            self.session.startRunning()
+        // Fire-and-forget, kept for existing callers. Routes through the
+        // awaitable path so a start that races a still-finalising video
+        // session gets its one retry instead of silently staying stopped.
+        Task { [weak self] in _ = await self?.startAsync() }
+    }
+
+    /// Starts the session and waits — bounded — for it to actually run.
+    ///
+    /// This is the deterministic primitive for the video→photo handoff: the
+    /// engine should `await` this (after synchronously stopping the video
+    /// session) instead of the fire-and-forget `start()`, so a start that
+    /// raced the camera's release is retried rather than silently dropped.
+    /// - Returns: true when the session is running within `timeout`.
+    func startAsync(timeout: TimeInterval = 5) async -> Bool {
+        await withTaskGroup(of: Bool.self) { group in
+            group.addTask { [weak self] in
+                guard let self else { return false }
+                // First attempt.
+                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                    self.sessionQueue.async { [weak self] in
+                        guard let self else { continuation.resume(); return }
+                        if !self.session.isRunning { self.session.startRunning() }
+                        continuation.resume()
+                    }
+                }
+                if await self.pollRunning(upTo: 2) { return true }
+                // One retry: the video session may have been finalising the
+                // movie file while the first attempt ran.
+                Self.logger.warning("Photo session didn't start; retrying once")
+                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                    self.sessionQueue.async { [weak self] in
+                        guard let self else { continuation.resume(); return }
+                        if !self.session.isRunning { self.session.startRunning() }
+                        continuation.resume()
+                    }
+                }
+                return await self.pollRunning(upTo: 2)
+            }
+            group.addTask {
+                try? await Task.sleep(for: .seconds(timeout))
+                return false
+            }
+            let result = await group.next() ?? false
+            group.cancelAll()
+            return result
         }
+    }
+
+    /// Polls `isRunning` until true or `seconds` elapse. Runs off `sessionQueue`
+    /// so it never blocks the queue the session needs.
+    private func pollRunning(upTo seconds: TimeInterval) async -> Bool {
+        let deadline = Date().addingTimeInterval(seconds)
+        while !session.isRunning, Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        return session.isRunning
     }
 
     func stop() {
@@ -150,14 +252,51 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
         }
     }
 
-    /// Synchronous stop. The engine uses this when handing the camera to the
-    /// video session: `stop()` dispatches async, which would race the video
-    /// session's `startRunning()` for the same physical device.
-    /// Must not be called from `sessionQueue` itself.
+    /// Synchronous stop. Blocks the calling thread until the session fully
+    /// stops — `AVCaptureSession.stopRunning()` is itself blocking, typically
+    /// tens of milliseconds, worst case ~2s if `sessionQueue` is mid-convergence
+    /// in `lockCameraSettings`.
+    ///
+    /// The engine uses this on the photo→video handoff: the video session must
+    /// not `startRunning()` while the photo session still holds the device.
+    /// Must not be called from `sessionQueue` itself (deadlock).
+    ///
+    /// For new code prefer `stopAsync()`, which never blocks the caller.
     func stopSync() {
         sessionQueue.sync { [weak self] in
             guard let self, self.session.isRunning else { return }
             self.session.stopRunning()
+        }
+    }
+
+    /// Stops the session without blocking the caller. `stopRunning()` still
+    /// runs on `sessionQueue` (it must), but the caller just awaits the
+    /// outcome — safe from the main actor and from any queue the capture
+    /// callbacks need.
+    /// - Returns: true when the session stopped within `timeout`. A false
+    ///   return means the stop may still complete afterwards; the session is
+    ///   not guaranteed stopped.
+    func stopAsync(timeout: TimeInterval = 5) async -> Bool {
+        await withTaskGroup(of: Bool.self) { group in
+            group.addTask { [weak self] in
+                guard let self else { return false }
+                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                    self.sessionQueue.async { [weak self] in
+                        guard let self else { continuation.resume(); return }
+                        if self.session.isRunning { self.session.stopRunning() }
+                        continuation.resume()
+                    }
+                }
+                return !self.session.isRunning
+            }
+            group.addTask {
+                try? await Task.sleep(for: .seconds(timeout))
+                Self.logger.warning("Timed out waiting for photo session to stop")
+                return false
+            }
+            let result = await group.next() ?? false
+            group.cancelAll()
+            return result
         }
     }
 
@@ -166,15 +305,39 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
     /// `finish()` waits on this before reconstructing: without it, a photo whose
     /// delegate fires after teardown would land on disk with no yaw entry, and a
     /// photo landing mid-reconstruction would miss the solver's input enumeration.
-    /// Bounded — a delegate that never fires must not hang the finish path.
+    ///
+    /// The drain tracks the photo output's *internal* pipeline, not the app's
+    /// serial queue: each capture's delegate stays retained in `pendingCaptures`
+    /// until its terminal `didFinishCaptureFor` fires, and waiters parked here
+    /// are resumed at that point. Bounded — a delegate that never fires must
+    /// not hang the finish path.
     func drainPendingCaptures() async {
-        let deadline = Date().addingTimeInterval(15)
-        while Date() < deadline {
-            if pendingLock.withLock({ pendingCount }) == 0 { return }
-            try? await Task.sleep(for: .milliseconds(100))
+        let timedOut = await withTaskGroup(of: Bool.self) { group in
+            group.addTask { [weak self] in
+                guard let self else { return false }
+                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                    self.pendingLock.withLock {
+                        if self.pendingCaptures.isEmpty {
+                            continuation.resume()
+                        } else {
+                            self.drainWaiters.append(continuation)
+                        }
+                    }
+                }
+                return false
+            }
+            group.addTask {
+                try? await Task.sleep(for: .seconds(15))
+                return true
+            }
+            let first = await group.next() ?? true
+            group.cancelAll()
+            return first
         }
-        let stuck = pendingLock.withLock { pendingCount }
-        Self.logger.error("Timed out waiting for in-flight captures: \(stuck, privacy: .public) remaining")
+        if timedOut {
+            let stuck = pendingLock.withLock { pendingCaptures.count }
+            Self.logger.error("Timed out waiting for in-flight captures: \(stuck, privacy: .public) remaining")
+        }
     }
 
     // MARK: - Locking
@@ -240,105 +403,168 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
 
     func capture() {
         sessionQueue.async { [weak self] in
-            guard let self, self.session.isRunning else { return }
-
-            let settings: AVCapturePhotoSettings
-            if self.photoOutput.availablePhotoCodecTypes.contains(.hevc) {
-                settings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.hevc])
-            } else {
-                settings = AVCapturePhotoSettings()
-            }
-
-            if self.maxDimensions.width > 0 {
-                settings.maxPhotoDimensions = self.maxDimensions
-            }
-            settings.photoQualityPrioritization = .quality
-
-            if self.photoOutput.isDepthDataDeliveryEnabled {
-                settings.isDepthDataDeliveryEnabled = true
-                // Embedding rather than handling depth separately means
-                // `PhotogrammetrySession` picks it up straight from the file, and
-                // the existing folder-based reconstruction path stays untouched.
-                settings.embedsDepthDataInPhoto = true
-            }
-
-            // A small preview accompanies the full-resolution photo and is what the
-            // sharpness check runs on — measuring 48 MP would cost far more than the
-            // decision is worth.
-            if let previewFormat = settings.availablePreviewPhotoPixelFormatTypes.first {
-                settings.previewPhotoFormat = [
-                    kCVPixelBufferPixelFormatTypeKey as String: previewFormat,
-                    kCVPixelBufferWidthKey as String: 512,
-                    kCVPixelBufferHeightKey as String: 384,
-                ]
-            }
-
-            self.shotIndex += 1
-            let index = self.shotIndex
-            let takenAt = Date()
-            let destination = self.imagesDirectory
-                .appending(path: String(format: "shot_%04d.heic", index), directoryHint: .notDirectory)
-
-            // Lifted out before the closure: `AVCapturePhotoSettings` is not
-            // `Sendable`, but its id is a plain `Int64`.
-            let settingsID = settings.uniqueID
-
-            // The photo output invokes this on its own callback queue, while
-            // `capture()` runs on `sessionQueue`: funnel the result through
-            // `sessionQueue` so `shotIndex` and `bestSharpness` are only ever
-            // touched on one thread.
-            let delegate = PhotoDelegate(destination: destination, takenAt: takenAt) { [weak self] result in
-                guard let self else { return }
-                self.sessionQueue.async { [weak self] in
-                    guard let self else { return }
-                    self.pendingLock.lock()
-                    self.pendingCaptures[settingsID] = nil
-                    self.pendingCount -= 1
-                    self.pendingLock.unlock()
-                    self.handle(result: result, index: index, destination: destination)
-                }
-            }
-
-            self.pendingLock.lock()
-            self.pendingCaptures[settingsID] = delegate
-            self.pendingCount += 1
-            self.pendingLock.unlock()
-
-            self.photoOutput.capturePhoto(with: settings, delegate: delegate)
+            self?.captureAttempt(0)
         }
+    }
+
+    /// One capture attempt, on `sessionQueue`. `captureReadiness` is honored:
+    /// `.notReady` is transitional (e.g. mid-reconfiguration), so the attempt is
+    /// retried briefly rather than dropped silently or fired into a busy pipeline.
+    private func captureAttempt(_ attempt: Int) {
+        guard session.isRunning else { return }
+
+        guard photoOutput.captureReadiness == .ready else {
+            if attempt < 3 {
+                sessionQueue.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                    self?.captureAttempt(attempt + 1)
+                }
+            } else {
+                onShotRejected(String(localized: "Camera busy — shot skipped"))
+            }
+            return
+        }
+
+        let settings: AVCapturePhotoSettings
+        if usesHEVC {
+            settings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.hevc])
+        } else {
+            settings = AVCapturePhotoSettings()
+        }
+
+        if maxDimensions.width > 0 {
+            settings.maxPhotoDimensions = maxDimensions
+        }
+        settings.photoQualityPrioritization = .quality
+
+        if photoOutput.isDepthDataDeliveryEnabled {
+            settings.isDepthDataDeliveryEnabled = true
+            // Embedding rather than handling depth separately means
+            // `PhotogrammetrySession` picks it up straight from the file, and
+            // the existing folder-based reconstruction path stays untouched.
+            settings.embedsDepthDataInPhoto = true
+        }
+
+        // A small preview accompanies the full-resolution photo and is what the
+        // sharpness check runs on — measuring 48 MP would cost far more than the
+        // decision is worth.
+        if let previewFormat = settings.availablePreviewPhotoPixelFormatTypes.first {
+            settings.previewPhotoFormat = [
+                kCVPixelBufferPixelFormatTypeKey as String: previewFormat,
+                kCVPixelBufferWidthKey as String: 512,
+                kCVPixelBufferHeightKey as String: 384,
+            ]
+        }
+
+        shotIndex += 1
+        let index = shotIndex
+        let takenAt = Date()
+        let destination = imagesDirectory
+            .appending(path: fileName(forShot: index), directoryHint: .notDirectory)
+
+        // Lifted out before the closure: `AVCapturePhotoSettings` is not
+        // `Sendable`, but its id is a plain `Int64`.
+        let settingsID = settings.uniqueID
+
+        // The photo output invokes the delegate on its own callback queue, while
+        // `capture()` runs on `sessionQueue`: funnel the result through
+        // `sessionQueue` so `shotIndex` and `sharpnessReference` are only ever
+        // touched on one thread. The delegate stays retained in
+        // `pendingCaptures` until its terminal `didFinishCaptureFor` fires —
+        // that is the signal the output's internal pipeline has drained.
+        let delegate = PhotoDelegate(destination: destination, takenAt: takenAt) { [weak self] result in
+            guard let self else { return }
+            self.sessionQueue.async { [weak self] in
+                guard let self else { return }
+                let waiters: [CheckedContinuation<Void, Never>] = self.pendingLock.withLock {
+                    self.pendingCaptures[settingsID] = nil
+                    guard self.pendingCaptures.isEmpty else { return [] }
+                    defer { self.drainWaiters.removeAll() }
+                    return self.drainWaiters
+                }
+                self.handle(result: result, index: index, destination: destination)
+                for waiter in waiters { waiter.resume() }
+            }
+        }
+
+        pendingLock.withLock {
+            pendingCaptures[settingsID] = delegate
+        }
+
+        photoOutput.capturePhoto(with: settings, delegate: delegate)
     }
 
     private func handle(result: Result<PhotoDelegate.Capture, Error>, index: Int, destination: URL) {
         switch result {
         case .failure(let error):
-            onFailure(error.localizedDescription)
+            // Per-frame failure: reported through the rejection channel, never
+            // the session-level `onFailure`. One bad frame must not invalidate
+            // the session or the captures still in flight.
+            onShotRejected("Couldn't save frame \(index): \(error.localizedDescription)")
 
         case .success(let capture):
             guard let sharpness = capture.sharpness else {
                 // No usable preview to judge; keeping the frame beats guessing.
+                consecutiveRejections = 0
                 onShotSaved(index, capture.takenAt, nil)
                 return
             }
 
-            bestSharpness = max(bestSharpness, sharpness)
+            // Exponential moving maximum: the reference tracks the recent best
+            // but decays, so one anomalously sharp frame — or dimming light
+            // afterwards — can't reject everything for the rest of the session.
+            // (Apple's own sharpest-in-sequence guidance likewise ranks
+            // relatively within a sequence, never against a fixed global floor.)
+            sharpnessReference = max(sharpness, sharpnessReference * referenceDecay)
 
-            if sharpness < bestSharpness * sharpnessFloor {
+            let floor = consecutiveRejections >= maxConsecutiveRejections ? relaxedFloor : sharpnessFloor
+            if sharpnessReference > 0, sharpness < sharpnessReference * floor {
                 // Discarded on purpose: a soft frame contributes wrong matches, and
                 // the auto-capture loop will cover this angle again shortly. The
                 // index is deliberately NOT reused — with captures in flight, a
                 // reused number could be handed to two different shots and one file
                 // would overwrite the other. Gaps in the numbering are harmless.
-                try? FileManager.default.removeItem(at: destination)
-                Self.logger.debug("Blurry frame dropped: \(sharpness, privacy: .public) / \(self.bestSharpness, privacy: .public)")
-                onShotRejected(String(localized: "Blurry frame skipped — rotate more slowly"))
+                consecutiveRejections += 1
+                let deleted = deleteRejectedFile(at: destination)
+                Self.logger.debug("Blurry frame dropped: \(sharpness, privacy: .public) / \(self.sharpnessReference, privacy: .public)")
+                var reason = String(localized: "Blurry frame skipped — rotate more slowly")
+                if !deleted {
+                    // The solver enumerates every non-dotfile in the images
+                    // directory, so a leftover would be re-ingested. Say so
+                    // loudly rather than silently shipping a soft frame.
+                    reason += " " + String(localized: "(cleanup failed — frame kept)")
+                }
+                onShotRejected(reason)
             } else {
+                consecutiveRejections = 0
                 onShotSaved(index, capture.takenAt, sharpness)
             }
         }
     }
+
+    /// Removes a blur-rejected frame. Returns false if the file is still on
+    /// disk afterwards — the solver enumerates the images directory, so a
+    /// leftover would be re-ingested into the reconstruction.
+    private func deleteRejectedFile(at url: URL) -> Bool {
+        let path = url.path(percentEncoded: false)
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: path) else { return true }
+        for _ in 0..<2 where fm.fileExists(atPath: path) {
+            try? fm.removeItem(at: url)
+        }
+        let gone = !fm.fileExists(atPath: path)
+        if !gone {
+            Self.logger.error("Couldn't delete rejected frame: \(url.lastPathComponent, privacy: .public)")
+        }
+        return gone
+    }
 }
 
 /// One-shot photo delegate: writes the file, scores its preview and reports back.
+///
+/// Completion is delivered exactly once, from the terminal
+/// `didFinishCaptureFor` callback — that is the photo output's end-of-pipeline
+/// signal, so the coordinator retains the delegate until then to implement a
+/// true drain. `didFinishProcessingPhoto` only computes and stores the result.
 private final class PhotoDelegate: NSObject, AVCapturePhotoCaptureDelegate {
     struct Capture {
         var takenAt: Date
@@ -348,6 +574,9 @@ private final class PhotoDelegate: NSObject, AVCapturePhotoCaptureDelegate {
     private let destination: URL
     private let takenAt: Date
     private let completion: @Sendable (Result<Capture, Error>) -> Void
+    private let stateLock = NSLock()
+    private var processingResult: Result<Capture, Error>?
+    private var didComplete = false
 
     init(destination: URL, takenAt: Date, completion: @escaping @Sendable (Result<Capture, Error>) -> Void) {
         self.destination = destination
@@ -361,22 +590,38 @@ private final class PhotoDelegate: NSObject, AVCapturePhotoCaptureDelegate {
         didFinishProcessingPhoto photo: AVCapturePhoto,
         error: Error?
     ) {
+        let result: Result<Capture, Error>
         if let error {
-            completion(.failure(error))
-            return
+            // Per-callback error param — a failing frame, not a failing session.
+            result = .failure(error)
+        } else if let data = photo.fileDataRepresentation() {
+            let sharpness = photo.previewPixelBuffer.flatMap(SharpnessMeter.score)
+            do {
+                try data.write(to: destination, options: .atomic)
+                result = .success(Capture(takenAt: takenAt, sharpness: sharpness))
+            } catch {
+                result = .failure(error)
+            }
+        } else {
+            result = .failure(PhotoCaptureCoordinator.SetupError.noPhotoData)
         }
-        guard let data = photo.fileDataRepresentation() else {
-            completion(.failure(PhotoCaptureCoordinator.SetupError.noPhotoData))
-            return
-        }
+        stateLock.withLock { processingResult = result }
+    }
 
-        let sharpness = photo.previewPixelBuffer.flatMap(SharpnessMeter.score)
-
-        do {
-            try data.write(to: destination, options: .atomic)
-            completion(.success(Capture(takenAt: takenAt, sharpness: sharpness)))
-        } catch {
-            completion(.failure(error))
+    func photoOutput(
+        _ output: AVCapturePhotoOutput,
+        didFinishCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings,
+        error: Error?
+    ) {
+        let result: Result<Capture, Error>? = stateLock.withLock {
+            guard !didComplete else { return nil }
+            didComplete = true
+            if let processingResult { return processingResult }
+            // Processing never produced a result (early failure): surface the
+            // terminal error rather than hanging the drain.
+            if let error { return .failure(error) }
+            return .failure(PhotoCaptureCoordinator.SetupError.noPhotoData)
         }
+        if let result { completion(result) }
     }
 }

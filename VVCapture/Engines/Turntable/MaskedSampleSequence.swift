@@ -12,9 +12,18 @@ import os
 ///
 /// The mask is built from the first image's actual dimensions rather than from the
 /// capture settings — the file is the authority on how big it really is.
+///
+/// Mask-space contract (see `PhotogrammetryReconstructor.reconstruct`): the
+/// incoming rect is in NORMALIZED UPRIGHT-PORTRAIT image space — origin
+/// top-left, 0…1, matching the EXIF-upright portrait buffers
+/// `PhotogrammetrySample(contentsOf:)` returns. The capture UI derotates the
+/// drag rect out of the sensor-native landscape space *before* it reaches this
+/// layer, so the mask is stamped with NO rotation. Do not re-apply
+/// `metadataOutputRectConverted`-style rotation here; that was the C3 bug.
 struct MaskedSampleSequence: Sequence {
     let imageURLs: [URL]
-    /// Region to keep, in 0…1 image coordinates. Nil means no masking.
+    /// Region to keep, in normalized upright-portrait image coordinates
+    /// (origin top-left, 0…1). Nil means no masking.
     let normalizedRect: CGRect?
 
     func makeIterator() -> Iterator {

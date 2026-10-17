@@ -17,6 +17,10 @@ import os
 /// needed, and a minute of gyro drift is a couple of degrees — fine for
 /// guidance. (On the simulator motion is unavailable and the ring stays empty;
 // finish still works.)
+///
+/// Camera access is gated on `CameraPermission.ensureVideoAccess()` at the top
+/// of `start()`: a fresh install that denies (or never grants) camera access
+/// fails fast with a routed error instead of sitting on a black preview.
 @MainActor
 @Observable
 final class OrbitCaptureEngine: ScanEngine {
@@ -65,19 +69,53 @@ final class OrbitCaptureEngine: ScanEngine {
     private var extractTask: Task<Int, Error>?
 
     private let motionManager = CMMotionManager()
-    private let motionQueue = OperationQueue()
+    /// Dedicated serial queue for the 30 Hz motion stream. Serial: concurrent
+    /// handlers could interleave yaw samples and corrupt the sector fill.
+    /// Dedicated (not main): a stuck main queue would delay callbacks — Apple
+    /// recommends a queue of your own for motion data, not the main queue.
+    private let motionQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.name = "com.visionvend.capture.orbit-motion"
+        queue.maxConcurrentOperationCount = 1
+        return queue
+    }()
     private var startYaw: Double?
     private var lastYaw: Double?
 
     private var isCancelled = false
+    /// M20 reentrancy guard. Sticky: set once at the top of finish() and never
+    /// cleared — a second finish() must not start a second extraction,
+    /// reconstruction, or library commit.
+    private var isFinishing = false
 
     init(storage: ScanStorage) {
         self.storage = storage
     }
 
-    func start() throws {
-        guard case .available = Self.availability else {
-            throw ScanEngineError.sessionUnavailable(Self.availability.blockedReason ?? "Unknown reason")
+    /// NOTE: async as of the C1 fix. This no longer satisfies the synchronous
+    /// `ScanEngine.start()` requirement — the protocol requirement and the
+    /// `try engine.start()` call sites (OrbitFlowView.startIfNeeded) must move
+    /// to `await` in the same change (coordinated, outside this file).
+    func start() async throws {
+        // C1: the OS only prompts once — gate every engine start on an
+        // explicit grant, so a fresh install that denies camera access fails
+        // fast with a routed error instead of a black preview with dead taps.
+        guard await CameraPermission.ensureVideoAccess() else {
+            let message = CameraPermission.denialMessage
+            captureError = message
+            phase = .failed(message: message)
+            throw ScanEngineError.sessionUnavailable(message)
+        }
+
+        // Minor: refuse a second start while a session is live instead of
+        // stacking a new capture session on top of the old one. Terminal
+        // phases (.done/.failed/.cancelled) may restart; live phases may not.
+        if !phase.isTerminal, phase != .idle {
+            throw ScanEngineError.sessionUnavailable("A scan is already in progress.")
+        }
+
+        guard Self.availability.isUsable else {
+            throw ScanEngineError.sessionUnavailable(Self.availability.blockedReason ?? String(localized: "Unknown reason"))
         }
 
         phase = .preparing
@@ -102,7 +140,15 @@ final class OrbitCaptureEngine: ScanEngine {
                 }
             },
             onFailure: { [weak self] message in
-                Task { @MainActor in self?.captureError = message }
+                Task { @MainActor in
+                    guard let self else { return }
+                    // M19: a failed take must not leave the UI stuck on
+                    // "recording", and must not leave the gyro streaming at
+                    // 30 Hz with nobody listening — reset both here.
+                    self.isRecordingVideo = false
+                    self.stopMotionTracking()
+                    self.captureError = message
+                }
             }
         )
         do {
@@ -117,7 +163,7 @@ final class OrbitCaptureEngine: ScanEngine {
         }
 
         video.start()
-        phase = .capturing(shots: 0, limit: 0)
+        phase = .capturing(shots: 0)
     }
 
     // MARK: - Recording
@@ -165,6 +211,10 @@ final class OrbitCaptureEngine: ScanEngine {
     }
 
     private func stopMotionTracking() {
+        // Apple: "always call stopDeviceMotionUpdates() when you no longer
+        // need motion data." Safe to call when not started; called from every
+        // exit path (failure, cancel, teardown) because deinit is not a
+        // reliable stop.
         motionManager.stopDeviceMotionUpdates()
     }
 
@@ -206,15 +256,36 @@ final class OrbitCaptureEngine: ScanEngine {
 
     func finish() async throws -> ScanRecord {
         guard let workspace, let manifest = yawManifest else {
-            throw ScanEngineError.sessionUnavailable("No active session.")
+            throw ScanEngineError.sessionUnavailable(String(localized: "No active session."))
         }
+
+        // M20: check-and-set as ONE synchronous region with no await between
+        // check and set. MainActor is reentrant (WWDC21) — a check, an await,
+        // then a set would let a second finish() slip in and run a second
+        // extraction, reconstruction, and library commit.
+        guard !isFinishing else {
+            throw ScanEngineError.sessionUnavailable("Finish already in progress.")
+        }
+        isFinishing = true
 
         if isRecordingVideo {
             stopVideoRecording()
-            await videoCoordinator?.awaitFinalized()
+            // M16-pattern: take the finalized URL from awaitFinalized()
+            // directly. The onFinishedRecording hop assigns recordedVideoURL
+            // on the MainActor and can lag the finalization continuation,
+            // which used to drop the take silently.
+            if let coordinator = videoCoordinator,
+               let finalizedURL = await coordinator.awaitFinalized() {
+                recordedVideoURL = finalizedURL
+            } else if recordedVideoURL == nil {
+                warnings.append(String(localized: "The video take was dropped — the recording never finalised."))
+            }
         }
 
-        guard !isCancelled, case .capturing = phase else {
+        // isFinishing is sticky (never cleared), so it can't flip back across
+        // an await — still, re-validate it alongside the existing gates at
+        // each suspension boundary per the reentrancy guidance.
+        guard isFinishing, !isCancelled, case .capturing = phase else {
             throw ScanEngineError.cancelled
         }
 
@@ -223,7 +294,7 @@ final class OrbitCaptureEngine: ScanEngine {
             throw ScanEngineError.noImagesCaptured
         }
 
-        phase = .processingVideo(VideoProcessingProgress(stage: "Extracting sharp frames"))
+        phase = .processingVideo(VideoProcessingProgress(stage: String(localized: "Extracting sharp frames")))
         let frameCount: Int
         do {
             let processTask = Task.detached {
@@ -231,13 +302,17 @@ final class OrbitCaptureEngine: ScanEngine {
                     videoURL: videoURL,
                     views: Self.orbitViews,
                     imagesURL: workspace.imagesURL,
-                    manifest: manifest
+                    manifest: manifest,
+                    firstShotIndex: 1,
+                    onCoverageWarning: { [weak self] note in
+                        Task { @MainActor in self?.warnings.append(note) }
+                    }
                 ) { fraction in
                     Task { @MainActor [weak self] in
                         guard let self, case .processingVideo = self.phase else { return }
                         self.phase = .processingVideo(VideoProcessingProgress(
                             fraction: fraction,
-                            stage: "Extracting sharp frames"
+                            stage: String(localized: "Extracting sharp frames")
                         ))
                     }
                 }
@@ -270,7 +345,13 @@ final class OrbitCaptureEngine: ScanEngine {
         }
 
         if !isOrbitComplete {
+            // Minor: on the simulator motion is unavailable so the ring is
+            // always empty — don't scold the user about a "0° partial orbit".
+            #if targetEnvironment(simulator)
+            warnings.append(String(localized: "Orbit coverage tracking is unavailable in the simulator, so the coverage ring stays empty."))
+            #else
             warnings.append(String(localized: "Partial orbit: only \(Int(coverageDegrees))° of 360° was covered. Walk all the way around next time."))
+            #endif
         }
 
         phase = .reconstructing(ReconstructionProgress())
@@ -318,7 +399,7 @@ final class OrbitCaptureEngine: ScanEngine {
             detail: .reduced,
             summary: output.poses?.summaryText
         )
-        storage.commit(record, workspace: workspace)
+        try storage.commit(record, workspace: workspace)
 
         teardown()
         phase = .done(record)
@@ -326,18 +407,37 @@ final class OrbitCaptureEngine: ScanEngine {
     }
 
     func cancel() {
+        // Terminal phases (.done/.failed/.cancelled) must not be re-entered:
+        // without this, cancelling after finish() discards the committed
+        // workspace and flips the result screen to "cancelled".
+        guard !phase.isTerminal else { return }
         isCancelled = true
         extractTask?.cancel()
         if isRecordingVideo { stopVideoRecording() }
         stopMotionTracking()
-        if let workspace {
-            storage.discard(workspace)
-        }
+        // M35: during reconstruction the solver still owns the workspace
+        // directory — deleting it now would pull files out from under the
+        // live session (mirrors TurntableCaptureEngine, which deliberately
+        // avoids this). Discard only when no reconstruction is in flight;
+        // finish() observes isCancelled at its next boundary and discards
+        // there, after the session is done with the directory.
+        let mayDiscard: Bool = {
+            if case .reconstructing = phase { return false }
+            return true
+        }()
+        let doomedWorkspace = mayDiscard ? workspace : nil
         teardown()
+        if let doomedWorkspace {
+            storage.discard(doomedWorkspace)
+        }
         phase = .cancelled
     }
 
     private func teardown() {
+        // M19/minor: stop motion on EVERY exit path — deinit is not a
+        // reliable stop for CMMotionManager, and an unpaired start drains the
+        // battery at 30 Hz indefinitely.
+        stopMotionTracking()
         videoCoordinator?.stop()
         videoCoordinator = nil
         workspace = nil
@@ -346,8 +446,8 @@ final class OrbitCaptureEngine: ScanEngine {
 
     private static func defaultName(for date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return String(localized: "Orbit scan \(formatter.string(from: date))")
+        formatter.locale = Locale(identifier: "en_US")
+        formatter.dateFormat = "d MMM HH:mm"
+        return String(localized: "\(Self.kind.displayName) scan \(formatter.string(from: date))")
     }
 }

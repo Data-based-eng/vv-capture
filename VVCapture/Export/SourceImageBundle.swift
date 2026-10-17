@@ -19,7 +19,7 @@ enum SourceImageBundle {
             case .imagesMissing:
                 String(localized: "Source images were deleted. You'll need to re-scan the object for full detail.")
             case .zipFailed(let detail):
-                "Couldn't create archive: \(detail)"
+                String(localized: "Couldn't create archive: \(detail)")
             }
         }
     }

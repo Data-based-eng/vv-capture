@@ -37,7 +37,7 @@ struct OrbitFlowView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .task { startIfNeeded() }
+        .task { await startIfNeeded() }
         .onDisappear {
             if finishedRecord == nil { engine?.cancel() }
         }
@@ -94,13 +94,22 @@ struct OrbitFlowView: View {
                 onFinished()
             }
         }
+        // M29: auto-lock used to kill multi-minute takes — the idle timer was
+        // only disabled for processing/reconstruction. Keep the screen awake
+        // for the whole capture stage, both flows.
+        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
+        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
     }
 
-    private func startIfNeeded() {
+    /// `start()` is `async throws`: it gates on
+    /// `CameraPermission.ensureVideoAccess()` (C1) before configuring the
+    /// session, so a denial lands here in `startupError` instead of a black
+    /// preview. See the `ScanEngine` protocol note in CHANGES.md.
+    private func startIfNeeded() async {
         guard engine == nil else { return }
         let engine = OrbitCaptureEngine(storage: storage)
         do {
-            try engine.start()
+            try await engine.start()
             self.engine = engine
         } catch {
             startupError = error.localizedDescription
@@ -119,8 +128,9 @@ private struct OrbitOverlay: View {
     @State private var finishError: String?
 
     var body: some View {
-        VStack(spacing: 0) {
-            topBar
+        GeometryReader { geo in
+            VStack(spacing: 0) {
+                topBar
             HStack {
                 OrbitCoverageCard(
                     coveredBins: engine.coveredYawBins,
@@ -143,23 +153,27 @@ private struct OrbitOverlay: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
             actionBar
-        }
-        .padding(.horizontal)
-        .padding(.bottom, 8)
-        .animation(.spring(response: 0.45, dampingFraction: 0.85), value: engine.phase)
-        .confirmationDialog("Cancel the scan?", isPresented: $isConfirmingCancel, titleVisibility: .visible) {
-            Button("Discard and Exit", role: .destructive, action: onCancel)
-            Button("Back to Scan", role: .cancel) {}
-        } message: {
-            Text("The recorded video will be deleted.")
-        }
-        .alert(
-            "Couldn't create the model",
-            isPresented: Binding(get: { finishError != nil }, set: { if !$0 { finishError = nil } })
-        ) {
-            Button("OK") { finishError = nil }
-        } message: {
-            Text(finishError ?? "")
+            }
+            .padding(.horizontal)
+            // M30: the X button sat under the Dynamic Island and Finish under
+            // the home indicator on the 15 Pro Max — respect the real insets.
+            .padding(.top, geo.safeAreaInsets.top)
+            .padding(.bottom, geo.safeAreaInsets.bottom + 8)
+            .animation(.spring(response: 0.45, dampingFraction: 0.85), value: engine.phase)
+            .confirmationDialog("Cancel the scan?", isPresented: $isConfirmingCancel, titleVisibility: .visible) {
+                Button("Discard and Exit", role: .destructive, action: onCancel)
+                Button("Back to Scan", role: .cancel) {}
+            } message: {
+                Text("The recorded video will be deleted.")
+            }
+            .alert(
+                "Couldn't create the model",
+                isPresented: Binding(get: { finishError != nil }, set: { if !$0 { finishError = nil } })
+            ) {
+                Button("OK") { finishError = nil }
+            } message: {
+                Text(finishError ?? "")
+            }
         }
     }
 

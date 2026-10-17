@@ -39,7 +39,7 @@ struct TurntableFlowView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .task { startIfNeeded() }
+        .task { await startIfNeeded() }
         .onDisappear {
             if finishedRecord == nil { engine?.cancel() }
         }
@@ -112,13 +112,22 @@ struct TurntableFlowView: View {
                 onFinished()
             }
         }
+        // M29: auto-lock used to kill multi-minute takes — the idle timer was
+        // only disabled for processing/reconstruction. Keep the screen awake
+        // for the whole capture stage, both flows.
+        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
+        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
     }
 
-    private func startIfNeeded() {
+    /// `start()` is `async throws`: it gates on
+    /// `CameraPermission.ensureVideoAccess()` (C1) before configuring the
+    /// session, so a denial lands here in `startupError` instead of a black
+    /// preview. See the `ScanEngine` protocol note in CHANGES.md.
+    private func startIfNeeded() async {
         guard engine == nil else { return }
         let engine = TurntableCaptureEngine(storage: storage)
         do {
-            try engine.start()
+            try await engine.start()
             self.engine = engine
         } catch {
             startupError = error.localizedDescription
@@ -263,6 +272,66 @@ private struct TurntableSetupGuide: View {
 
 // MARK: - Preview layer
 
+/// Converts the on-screen mask rectangle into the normalized image space the
+/// mask pipeline (`MaskedSampleSequence` / `ObjectMaskBuilder`) stamps onto.
+///
+/// Two stacked bugs lived here (C3 + M26), both confirmed by Apple's docs
+/// (see research pack `research/ui-flows/RESEARCH.md`):
+///
+/// M26 — `metadataOutputRectConverted(fromLayerRect:)` takes coordinates in the
+/// *preview layer's* space, but the drag rect lives in the SwiftUI overlay's
+/// (window) space. The preview view ignores the safe area, so its layer starts
+/// above the overlay origin by the top inset; feeding window coordinates
+/// straight in shifted the mask by ~54–59pt. We convert through the window
+/// first (`view.convert(_:to: nil)` gives the view's frame in window coords;
+/// we offset the rect by its origin).
+///
+/// C3 — that conversion returns a normalized rect on the *unrotated* image:
+/// sensor-native landscape, even in a portrait UI. The video buffers are
+/// stored rotated 90° with an EXIF orientation flag, so the mask pipeline
+/// stamps onto EXIF-upright portrait buffers. We counter-rotate the rect 90°
+/// into normalized upright-portrait space (origin top-left) before handing it
+/// over — the contract the mask side relies on.
+///
+/// The transform accounts for the layer's `videoGravity` (here
+/// `.resizeAspectFill`) because `metadataOutputRectConverted` does; a rect
+/// inside the visible area may legitimately land outside 0…1 after the crop,
+/// and is passed through unclamped.
+enum MaskCoordinateSpace {
+    /// Full pipeline: window-space rect → normalized upright-portrait rect.
+    static func normalizedUprightRect(forWindowRect rect: CGRect, in view: UIView) -> CGRect {
+        // M26: window coords → layer coords.
+        let viewFrameInWindow = view.convert(view.bounds, to: nil)
+        let layerRect = rect.offsetBy(
+            dx: -viewFrameInWindow.origin.x,
+            dy: -viewFrameInWindow.origin.y
+        )
+        guard view.bounds.width > 0, view.bounds.height > 0,
+              let layer = view.layer as? AVCaptureVideoPreviewLayer
+        else { return .zero }
+        let sensorRect = layer.metadataOutputRectConverted(fromLayerRect: layerRect)
+        // C3: sensor-landscape → upright portrait.
+        return derotatedToUpright(sensorRect)
+    }
+
+    /// Sensor-landscape (x→right along the long axis, y→down) → upright
+    /// portrait (origin top-left).
+    ///
+    /// Portrait buffers are the landscape buffer rotated 90° CW (EXIF
+    /// orientation 6), so landscape point (lx, ly) lands at (1 − ly, lx).
+    /// A rect (sx, sy, sw, sh) therefore becomes (1 − sy − sh, sx, sh, sw).
+    /// Sanity: full frame maps to full frame, and the landscape right edge
+    /// maps to the portrait bottom edge.
+    static func derotatedToUpright(_ sensor: CGRect) -> CGRect {
+        CGRect(
+            x: 1 - sensor.minY - sensor.height,
+            y: sensor.minX,
+            width: sensor.height,
+            height: sensor.width
+        )
+    }
+}
+
 struct CameraPreviewView: UIViewRepresentable {
     let session: AVCaptureSession
     let maskFrame: CGRect
@@ -275,14 +344,32 @@ struct CameraPreviewView: UIViewRepresentable {
         return view
     }
 
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
     func updateUIView(_ view: PreviewView, context: Context) {
-        // `metadataOutputRectConverted` is the only correct way to go from on-screen
-        // coordinates to the capture device's normalised space: it accounts for
-        // `videoGravity` cropping and the preview's own orientation, which hand-rolled
-        // arithmetic would get wrong.
-        guard view.bounds.width > 0, view.bounds.height > 0 else { return }
-        let converted = view.previewLayer.metadataOutputRectConverted(fromLayerRect: maskFrame)
-        onMaskChange(converted)
+        let converted = MaskCoordinateSpace.normalizedUprightRect(forWindowRect: maskFrame, in: view)
+        // Push only on change: updateUIView runs on every render, and the
+        // engine re-stamps the mask each time it receives one.
+        context.coordinator.push(converted, onChange: onMaskChange)
+    }
+
+    /// Change-detection so the mask rect isn't pushed to the engine on every
+    /// render — only when the user actually moved or resized it.
+    final class Coordinator {
+        private var lastSent: CGRect?
+
+        func push(_ rect: CGRect, onChange: (CGRect) -> Void) {
+            // Rounded so float jitter can't spam "new" rects.
+            let rounded = CGRect(
+                x: (rect.minX * 4096).rounded() / 4096,
+                y: (rect.minY * 4096).rounded() / 4096,
+                width: (rect.width * 4096).rounded() / 4096,
+                height: (rect.height * 4096).rounded() / 4096
+            )
+            guard rounded != lastSent else { return }
+            lastSent = rounded
+            onChange(rounded)
+        }
     }
 
     final class PreviewView: UIView {
@@ -304,8 +391,9 @@ private struct TurntableOverlay: View {
     @State private var rippleOpacity: Double = 0
 
     var body: some View {
-        VStack(spacing: 0) {
-            topBar
+        GeometryReader { geo in
+            VStack(spacing: 0) {
+                topBar
             // Coverage readout: the 3D ring shows where in space each image was
             // taken, the notches show which sides are captured. Tied to the
             // engine's shots-per-revolution so the ring always means one turn.
@@ -341,23 +429,32 @@ private struct TurntableOverlay: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
             actionBar
-        }
-        .padding(.horizontal)
-        .padding(.bottom, 8)
-        .animation(.spring(response: 0.45, dampingFraction: 0.85), value: engine.phase)
-        .confirmationDialog("Cancel the scan?", isPresented: $isConfirmingCancel, titleVisibility: .visible) {
-            Button("Discard and Exit", role: .destructive, action: onCancel)
-            Button("Back to Scan", role: .cancel) {}
-        } message: {
-            Text("\(engine.shotCount) photos will be deleted.")
-        }
-        .alert(
-            "Couldn't create the model",
-            isPresented: Binding(get: { finishError != nil }, set: { if !$0 { finishError = nil } })
-        ) {
-            Button("OK") { finishError = nil }
-        } message: {
-            Text(finishError ?? "")
+            }
+            .padding(.horizontal)
+            // M30: the X button sat under the Dynamic Island and Finish under
+            // the home indicator on the 15 Pro Max — respect the real insets.
+            .padding(.top, geo.safeAreaInsets.top)
+            .padding(.bottom, geo.safeAreaInsets.bottom + 8)
+            .animation(.spring(response: 0.45, dampingFraction: 0.85), value: engine.phase)
+            .confirmationDialog("Cancel the scan?", isPresented: $isConfirmingCancel, titleVisibility: .visible) {
+                Button("Discard and Exit", role: .destructive, action: onCancel)
+                Button("Back to Scan", role: .cancel) {}
+            } message: {
+                // A video take has no photos; tell the user what's actually lost.
+                if engine.isRecordingVideo || engine.recordedVideoURL != nil {
+                    Text("The recorded video will be deleted.")
+                } else {
+                    Text("\(engine.shotCount) photos will be deleted.")
+                }
+            }
+            .alert(
+                "Couldn't create the model",
+                isPresented: Binding(get: { finishError != nil }, set: { if !$0 { finishError = nil } })
+            ) {
+                Button("OK") { finishError = nil }
+            } message: {
+                Text(finishError ?? "")
+            }
         }
     }
 
@@ -849,23 +946,37 @@ struct ObjectMaskRectangle: View {
                         .padding(.horizontal, 5)
                         .padding(.vertical, 2)
                         .background(Brand.phosphor, in: Capsule())
-                        .position(x: displayed.minX + 22, y: displayed.minY - 10)
+                        // The overlay is already anchored at the rect's
+                        // top-leading corner, so offset in the overlay's own
+                        // coordinates — positioning with displayed.minX/minY
+                        // here applied the rect offset twice.
+                        .offset(x: 22, y: -10)
                 }
                 .gesture(
                     DragGesture()
                         .onChanged { dragOffset = $0.translation }
                         .onEnded { _ in
-                            frame = displayed
+                            // Commit only the drag: a pinch still in flight
+                            // keeps its own state instead of snapping when the
+                            // other gesture ends mid-gesture.
+                            frame = frame.offsetBy(dx: dragOffset.width, dy: dragOffset.height)
                             dragOffset = .zero
-                            scale = 1
                         }
                 )
                 .simultaneousGesture(
                     MagnifyGesture()
                         .onChanged { scale = $0.magnification }
                         .onEnded { _ in
-                            frame = displayed
-                            dragOffset = .zero
+                            // Commit only the pinch: a drag still in flight
+                            // keeps its own state.
+                            let width = frame.width * scale
+                            let height = frame.height * scale
+                            frame = CGRect(
+                                x: frame.midX - width / 2,
+                                y: frame.midY - height / 2,
+                                width: width,
+                                height: height
+                            )
                             scale = 1
                         }
                 )

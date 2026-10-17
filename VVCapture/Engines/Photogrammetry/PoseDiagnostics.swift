@@ -41,11 +41,15 @@ struct PoseDiagnostics: Sendable {
     /// Images handed to it.
     let totalSamples: Int
     /// How much of a full turn the solved cameras cover, in degrees. Only
-    /// meaningful for `.orbit`.
+    /// meaningful for `.orbit` — and only when `anglesValid`.
     let azimuthCoverageDegrees: Int
-    /// Difference between the highest and lowest camera elevation, in degrees. Only
-    /// meaningful for `.orbit`.
+    /// Difference between the highest and lowest camera elevation, in degrees.
+    /// Only meaningful for `.orbit` — and only when `anglesValid`.
     let elevationSpreadDegrees: Int
+    /// True only when enough cameras solved for the angles to mean something
+    /// (at least two). Guards the summary and advice against presenting
+    /// zero-value defaults as measurements.
+    private let anglesValid: Bool
 
     /// Azimuth is binned rather than measured min-to-max: cameras spread over
     /// 350° and cameras clustered in two opposite clumps have the same extent but
@@ -61,14 +65,21 @@ struct PoseDiagnostics: Sendable {
         guard framing == .orbit else {
             azimuthCoverageDegrees = 0
             elevationSpreadDegrees = 0
+            anglesValid = false
             return
         }
 
         guard positions.count >= 2 else {
+            // Fewer than two solved cameras: the angle fields stay at their
+            // zero defaults, and `anglesValid` keeps them out of the summary —
+            // 0° is a default, not a measurement.
             azimuthCoverageDegrees = 0
             elevationSpreadDegrees = 0
+            anglesValid = false
             return
         }
+
+        anglesValid = true
 
         // For an orbit the cameras sit on a shell around the subject, so their
         // centroid approximates the subject's centre closely enough to measure
@@ -106,10 +117,12 @@ struct PoseDiagnostics: Sendable {
         }
     }
 
-    /// One line for the library row. Angles are omitted where they mean nothing.
+    /// One line for the library row. Angles are omitted where they mean nothing —
+    /// for `.interior`, and whenever too few cameras solved to measure them
+    /// (a 0° default is never presented as a measurement).
     var summaryText: String {
         let alignment = "\(solvedSamples)/\(totalSamples) aligned"
-        guard framing == .orbit else { return alignment }
+        guard framing == .orbit, anglesValid else { return alignment }
         return "\(alignment) · azimuth \(azimuthCoverageDegrees)° · elevation \(elevationSpreadDegrees)°"
     }
 
@@ -119,7 +132,10 @@ struct PoseDiagnostics: Sendable {
     var advice: [String] {
         var notes: [String] = []
 
-        if totalSamples > 0, solvedSamples < (totalSamples * 4) / 5 {
+        // >= 80% aligned counts as a good solve for the notes below.
+        let alignmentGood = totalSamples > 0 && solvedSamples >= (totalSamples * 4) / 5
+
+        if totalSamples > 0, !alignmentGood {
             let dropped = totalSamples - solvedSamples
             // The failure is the same, the cause is not: a rotating subject loses
             // frames to sliding shadows, a walking camera loses them to motion blur.
@@ -128,28 +144,38 @@ struct PoseDiagnostics: Sendable {
             case .orbit:
                 notes.append("\(dropped) photos couldn't be aligned and never entered the model. The most common cause is light rotating with the object: as the object turns, shadows slide across the surface and the solver can't match the same point in two frames. Make the light soft from all sides, or rotate the lamp with the object.")
             case .interior:
-                notes.append("\(dropped) frames couldn't be aligned and never entered the model — only \(totalSamples > 0 ? solvedSamples * 100 / totalSamples : 0)% were used. When walking, the most common causes are motion blur and fast turns: pause briefly while rotating the phone and add light. Empty flat walls also leave no pattern to match.")
+                notes.append("\(dropped) frames couldn't be aligned and never entered the model — only \(solvedSamples * 100 / totalSamples)% were used. When walking, the most common causes are motion blur and fast turns: pause briefly while rotating the phone and add light. Empty flat walls also leave no pattern to match.")
             }
         }
 
         switch framing {
         case .orbit:
-            if azimuthCoverageDegrees < 300 {
-                notes.append("Azimuth coverage \(azimuthCoverageDegrees)° — the full turn didn't close. The uncovered side will have hallucinated surface.")
+            if anglesValid, azimuthCoverageDegrees < 300 {
+                if alignmentGood {
+                    notes.append("Azimuth coverage \(azimuthCoverageDegrees)° — the full turn didn't close. The uncovered side will have hallucinated surface.")
+                } else {
+                    // Reconciled with the alignment note above: when frames never
+                    // aligned, the gap is missing surface, not hallucinated
+                    // surface — claiming hallucination would contradict "never
+                    // entered the model".
+                    notes.append("Azimuth coverage \(azimuthCoverageDegrees)° — mostly because \(totalSamples - solvedSamples) frames never aligned. Those sides are missing from the model entirely, not just soft: fix the alignment problem above and the coverage follows.")
+                }
             }
 
             // The single-ring case. Worth stating even when everything else is fine,
             // because it is the difference between a turntable pass and an orbit.
-            if elevationSpreadDegrees < 15 {
+            if anglesValid, elevationSpreadDegrees < 15 {
                 notes.append("Almost all frames are from the same height (\(elevationSpreadDegrees)° elevation spread). Cameras on a single ring give no vertical parallax, so top and bottom surfaces come out soft. Changing the phone's height/angle and shooting a second revolution is the single biggest improvement.")
             }
 
         case .interior:
-            // Stated unconditionally, and it is not a capture problem: `reduced` is a
-            // fixed budget per model, so a whole room gets the same ~25.000 triangles
-            // and the same single texture that a game controller gets. At room scale
-            // that is roughly one triangle per 20 cm² — no amount of walking fixes it.
-            if solvedSamples >= (totalSamples * 4) / 5 {
+            // Stated only for a genuinely good solve: with zero images (or zero
+            // aligned) "Capture is good" would be a lie. It is not a capture
+            // problem: `reduced` is a fixed budget per model, so a whole room
+            // gets the same ~25.000 triangles and the same single texture that a
+            // game controller gets. At room scale that is roughly one triangle
+            // per 20 cm² — no amount of walking fixes it.
+            if totalSamples > 0, solvedSamples > 0, alignmentGood {
                 notes.append(String(localized: "Capture is good: frames aligned. The low quality isn't the capture — it's the on-device `reduced` level: ~25,000 triangles and a single texture spread over the whole surface. Plenty for a small product, far too few for anything bigger. Frames are saved: reprocessing on a Mac at `.raw` is the real fix."))
             }
         }

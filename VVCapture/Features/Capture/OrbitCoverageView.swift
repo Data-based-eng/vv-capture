@@ -51,5 +51,14 @@ struct OrbitCoverageCard: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(Brand.panelEdge, lineWidth: 1)
         )
+        // VoiceOver reads one summary instead of 72 unlabeled segments.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilitySummary)
+    }
+
+    private var accessibilitySummary: String {
+        coveredBins.count >= binCount
+            ? "Full orbit covered"
+            : "\(Int(coverageDegrees)) of 360 degrees covered"
     }
 }

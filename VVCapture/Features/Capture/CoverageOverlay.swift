@@ -33,6 +33,9 @@ struct CoverageCard: View {
         .padding(10)
         .depthPanel(cornerRadius: 14)
         .transition(.move(edge: .leading).combined(with: .opacity))
+        // VoiceOver reads one summary instead of an unlabeled canvas of ticks.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(complete ? "Full turn complete" : "\(covered) of \(notchCount) sides captured")
     }
 }
 
