@@ -112,6 +112,10 @@ struct RootView: View {
     /// gate themselves on `CameraPermission.ensureVideoAccess()` as well, but
     /// asking up front keeps a denied user on the picker with a clear
     /// recovery path instead of bouncing through a flow that can't start.
+    ///
+    /// `@MainActor`: the permission prompt resolves off the main thread, and
+    /// the `@State` writes below must happen back on it.
+    @MainActor
     private func selectAfterPermission(_ kind: ScanEngineKind) async {
         if await CameraPermission.ensureVideoAccess() {
             mode = kind

@@ -58,6 +58,20 @@ enum ScanPhase: Equatable, Sendable {
         default: false
         }
     }
+
+    /// The screen must stay awake while these phases are active. Managed
+    /// centrally by the flow views via `onChange`: SwiftUI does not guarantee
+    /// `onDisappear` of the outgoing phase view runs before `onAppear` of the
+    /// incoming one, so per-view boolean toggles of `isIdleTimerDisabled` can
+    /// end in the wrong state across a phase swap.
+    var keepsScreenAwake: Bool {
+        switch self {
+        case .capturing, .processingVideo, .reconstructing:
+            true
+        case .idle, .preparing, .done, .failed, .cancelled:
+            false
+        }
+    }
 }
 
 /// Progress of the video take pipeline (rotation measurement, then frame

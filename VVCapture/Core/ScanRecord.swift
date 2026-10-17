@@ -21,8 +21,8 @@ struct ScanRecord: Identifiable, Codable, Hashable, Sendable {
     /// How many stills fed the reconstruction (nil for depth-based engines).
     let imageCount: Int?
 
-    /// Physical bounding box in metres, when the engine knows it. The fastest way
-    /// to sanity-check metric scale — compare it against a ruler.
+    /// Physical bounding box in millimetres, when the engine knows it. The
+    /// fastest way to sanity-check metric scale — compare it against a ruler.
     var dimensionsMillimetres: [Int]?
 
     /// Reconstruction detail the model was built at. Photogrammetry only.

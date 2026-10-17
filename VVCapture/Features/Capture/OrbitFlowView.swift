@@ -16,6 +16,11 @@ struct OrbitFlowView: View {
     /// Screen-space rectangle the user places over the object.
     @State private var maskFrame = CGRect(x: 80, y: 240, width: 220, height: 260)
 
+    /// The capture overlay's origin in window coordinates — see
+    /// OverlayWindowOriginKey (M26). The mask rect is shifted by this origin
+    /// into window space before `MaskCoordinateSpace` converts it.
+    @State private var overlayWindowOrigin = CGPoint.zero
+
     /// Called when the flow ends so the host can reset to a fresh session.
     var onFinished: () -> Void = {}
 
@@ -38,7 +43,15 @@ struct OrbitFlowView: View {
         }
         .preferredColorScheme(.dark)
         .task { await startIfNeeded() }
+        // M29: the screen stays awake for capture, video processing, and
+        // reconstruction — driven by phase, not by view appear/disappear, so a
+        // phase swap can't leave the timer in the wrong state.
+        .onChange(of: engine?.phase.keepsScreenAwake ?? false, initial: true) { _, keepAwake in
+            UIApplication.shared.isIdleTimerDisabled = keepAwake
+        }
         .onDisappear {
+            // Belt and braces: re-enable even if the phase never got there.
+            UIApplication.shared.isIdleTimerDisabled = false
             if finishedRecord == nil { engine?.cancel() }
         }
     }
@@ -78,7 +91,12 @@ struct OrbitFlowView: View {
     private func captureStage(engine: OrbitCaptureEngine) -> some View {
         ZStack {
             if let session = engine.session {
-                CameraPreviewView(session: session, maskFrame: maskFrame) { normalized in
+                CameraPreviewView(
+                    session: session,
+                    // The drag rect lives in this overlay's safe-area-inset space;
+                    // shift it into window space for the conversion (M26).
+                    maskFrame: maskFrame.offsetBy(dx: overlayWindowOrigin.x, dy: overlayWindowOrigin.y)
+                ) { normalized in
                     engine.objectMaskRect = normalized
                 }
                 .ignoresSafeArea()
@@ -94,11 +112,18 @@ struct OrbitFlowView: View {
                 onFinished()
             }
         }
-        // M29: auto-lock used to kill multi-minute takes — the idle timer was
-        // only disabled for processing/reconstruction. Keep the screen awake
-        // for the whole capture stage, both flows.
-        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
-        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
+        // Measure the overlay's window origin so the mask rect can be shifted
+        // out of safe-area-inset space (M26). `.global` matches UIKit window
+        // coordinates on this full-screen iPhone app.
+        .background(
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: OverlayWindowOriginKey.self,
+                    value: proxy.frame(in: .global).origin
+                )
+            }
+        )
+        .onPreferenceChange(OverlayWindowOriginKey.self) { overlayWindowOrigin = $0 }
     }
 
     /// `start()` is `async throws`: it gates on
@@ -258,20 +283,30 @@ private struct OrbitOverlay: View {
     }
 
     private var guidanceText: String {
+        // String(localized:): this property returns String (not a literal), so
+        // the strings must be localized at creation — Text(guidanceText) would
+        // otherwise display the untranslated key.
         if engine.isRecordingVideo {
             engine.isOrbitComplete
-                ? "Full orbit covered — stop when you're happy with the angles"
-                : "Walk slowly around the product — keep it centered in the frame"
+                ? String(localized: "Full orbit covered — stop when you're happy with the angles")
+                : String(localized: "Walk slowly around the product — keep it centered in the frame")
         } else if engine.recordedVideoURL != nil {
-            "Take recorded — finish to build the model, or record again"
+            String(localized: "Take recorded — finish to build the model, or record again")
         } else {
-            "Frame the product, hit record, then walk all the way around it"
+            String(localized: "Frame the product, hit record, then walk all the way around it")
         }
     }
 
     private func finish() {
+        // The button's .disabled(isFinishing) lags one render behind rapid
+        // taps: without this guard a second tap spawns a second finish()
+        // task, the engine's reentrancy guard throws sessionUnavailable, and
+        // the user gets a spurious "couldn't create the model" alert.
+        guard !isFinishing else { return }
         isFinishing = true
-        Task {
+        // @MainActor: isFinishing/finishError are @State, and the finish()
+        // continuation must land back on the main thread to touch them.
+        Task { @MainActor in
             defer { isFinishing = false }
             do {
                 _ = try await engine.finish()

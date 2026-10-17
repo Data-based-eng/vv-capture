@@ -24,6 +24,16 @@ enum ObjectMaskBuilder {
     /// - Returns: a `kCVPixelFormatType_OneComponent8` buffer, 255 inside the region
     ///   and 0 outside.
     static func makeMask(width: Int, height: Int, normalizedRect: CGRect) -> CVPixelBuffer? {
+        // A degenerate rect (zero or negative area — e.g. a tap that never
+        // became a drag) must not produce an all-black mask: that would mask
+        // the object out of every frame. Fail open to unmasked instead; the
+        // caller logs the fallback.
+        guard !normalizedRect.isNull, !normalizedRect.isEmpty else { return nil }
+        // NaN components would trap in the Int(...) conversions below, so
+        // treat them like the degenerate case and fail open.
+        guard normalizedRect.minX.isFinite, normalizedRect.minY.isFinite,
+              normalizedRect.width.isFinite, normalizedRect.height.isFinite else { return nil }
+
         var buffer: CVPixelBuffer?
         let attributes: [CFString: Any] = [
             kCVPixelBufferCGImageCompatibilityKey: false,

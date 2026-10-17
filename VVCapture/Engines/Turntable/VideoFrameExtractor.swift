@@ -38,7 +38,16 @@ enum VideoPipeline {
         firstShotIndex: Int,
         onProgress: @escaping @Sendable (VideoProcessingProgress) -> Void
     ) async throws -> VideoProcessResult {
-        try await Task.detached {
+        // Fail fast: if the caller already cancelled, don't spawn the
+        // detached decode task at all — there is no reason to start heavy
+        // work that the cancellation handler would immediately tear down.
+        try Task.checkCancellation()
+        // Detached to hop off the caller's actor — this is heavy video
+        // decoding — but the handle is kept so cancellation propagates. A
+        // bare `Task.detached { ... }.value` would orphan the decode work
+        // when the caller cancels: it would keep extracting frames and
+        // writing them into a workspace the engine has already discarded.
+        let task = Task.detached {
             let analysis = try await YawEstimator().analyze(
                 videoURL: videoURL,
                 nominalRevSeconds: nominalRevSeconds
@@ -67,7 +76,7 @@ enum VideoPipeline {
             // A view that yielded no frame is reported, not silently
             // dropped: partial coverage must not reach the solver untold.
             let coverageWarning: String? = extraction.skippedViews > 0
-                ? "\(extraction.count) of \(views) angles yielded frames"
+                ? String(localized: "\(extraction.count) of \(views) angles yielded frames")
                 : nil
             let warning: String?
             switch (analysis.warning, coverageWarning) {
@@ -82,10 +91,15 @@ enum VideoPipeline {
             }
             return VideoProcessResult(
                 frameCount: extraction.count,
-                method: analysis.method,
+                method: FrameExtractor.manifestMethod(for: analysis.method),
                 warning: warning
             )
-        }.value
+        }
+        return try await withTaskCancellationHandler {
+            try await task.value
+        } onCancel: {
+            task.cancel()
+        }
     }
 }
 
@@ -95,15 +109,18 @@ enum VideoPipeline {
 /// requested around the target time via `AVAssetImageGenerator.images(for:)`;
 /// each result's *actual* frame time is mapped to its true angle (never the
 /// requested time) and only in-window candidates are scored. The sharpest
-/// sharpest in-window frame is written as `shot_%06d.jpg` (continuing the
+/// in-window frame is written as `shot_%06d.jpg` (continuing the
 /// stills' numbering) straight into the
 /// workspace's images directory, with its measured angle recorded in the yaw
 /// manifest — so the reconstructor treats video frames exactly like stills.
 ///
-/// Failure isolation is per-request and per-view: one bad frame or one bad
-/// encode skips that view, never the whole run. A global seen-set keyed by
-/// actual frame time stops adjacent windows from claiming the same physical
-/// frame as two "views".
+/// Failure isolation is per-request and per-view: one bad frame skips that
+/// candidate, never the whole run, and an encode failure falls back to the
+/// window's next-sharpest candidate. A global seen-set keyed by actual frame
+/// time stops adjacent windows from writing the same physical frame as two
+/// "views"; a frame is claimed only when it is successfully written — never
+/// on decode — so a frame rejected by one window's guard stays eligible for
+/// its neighbor, and a failed write never burns the frame for later windows.
 struct FrameExtractor: Sendable {
     private static let logger = Logger(subsystem: "com.visionvend.capture", category: "frames")
 
@@ -115,7 +132,9 @@ struct FrameExtractor: Sendable {
 
     /// Maps the estimator's internal method strings onto `YawEntry`'s
     /// documented vocabulary ("marker", "vision", "rpm", "timestamp").
-    private static func manifestMethod(for internalMethod: String) -> String {
+    /// Module-internal so `VideoPipeline` reports the same vocabulary in
+    /// `VideoProcessResult.method` that the manifest carries per-frame.
+    static func manifestMethod(for internalMethod: String) -> String {
         switch internalMethod {
         case "video-marker": return "marker"
         case "video-rpm": return "rpm"
@@ -185,7 +204,17 @@ struct FrameExtractor: Sendable {
 
             // The winning frame's *measured* angle, computed from its
             // actualTime — the manifest records this, never the target angle.
-            var best: (score: Float, image: CGImage, t: Double, theta: Double)?
+            //
+            // Candidates are collected first and the winner picked after:
+            // the global `seen` set is claimed on successful *write*, not on
+            // sight. Claiming on sight would let a frame decoded for this
+            // window but rejected by the angular guard (its actualTime
+            // drifted) block an adjacent window for which it *is* in-window;
+            // claiming at win time would let a failed encode burn the frame
+            // for later windows. At most `attemptsPerView` full-res frames
+            // are held transiently here.
+            var candidates: [(score: Float, image: CGImage, t: Double, theta: Double)] = []
+            candidates.reserveCapacity(Self.attemptsPerView)
             // images(for:) is an AsyncSequence: per-request success/failure
             // isolation is built in, and it terminates on task cancellation,
             // so no continuation can dangle.
@@ -195,44 +224,56 @@ struct FrameExtractor: Sendable {
                 case .success(_, let image, let actualTime):
                     let at = CMTimeGetSeconds(actualTime)
                     guard at.isFinite else { continue }
-                    guard seen.insert(Int((at * 1000).rounded())).inserted else { continue }
                     var theta = (omega * (at - analysis.t0)).truncatingRemainder(dividingBy: 360)
                     if theta < 0 { theta += 360 }
                     guard Self.angularDistance(theta, targetTheta) <= step / 2 else { continue }
-                    let score = Self.sharpness(of: image)
-                    if best == nil || score > best!.score {
-                        best = (score, image, at, theta)
-                    }
+                    candidates.append((score: Self.sharpness(of: image), image: image, t: at, theta: theta))
                 case .failure(_, let error):
                     // One bad frame is a skipped candidate, not a failed run.
                     Self.logger.warning("Frame request failed: \(error.localizedDescription, privacy: .public)")
                 }
             }
-
-            if let best {
-                let url = imagesURL.appending(
-                    path: String(format: "shot_%06d.jpg", firstShotIndex + i),
-                    directoryHint: .notDirectory
-                )
+            // Sharpest first; a frame is claimed only once it is
+            // successfully written, so a window whose sharpest frame was
+            // already taken by its neighbor falls back to its next-best,
+            // and an encode failure retries the next candidate instead of
+            // skipping the view outright.
+            candidates.sort { $0.score > $1.score }
+            let url = imagesURL.appending(
+                path: String(format: "shot_%06d.jpg", firstShotIndex + i),
+                directoryHint: .notDirectory
+            )
+            var wroteView = false
+            for candidate in candidates {
+                let key = Self.timeKey(candidate.t)
+                guard !seen.contains(key) else { continue }
                 do {
-                    try Self.writeJPEG(best.image, to: url)
+                    try Self.writeJPEG(candidate.image, to: url)
                     manifest.append(
                         shot: firstShotIndex + i,
                         file: url.lastPathComponent,
-                        takenAt: baseDate.addingTimeInterval(best.t),
-                        thetaDeg: best.theta,
+                        takenAt: baseDate.addingTimeInterval(candidate.t),
+                        thetaDeg: candidate.theta,
                         method: Self.manifestMethod(for: analysis.method),
-                        sharpness: best.score
+                        sharpness: candidate.score
                     )
+                    seen.insert(key)
                     written += 1
+                    wroteView = true
+                    break
                 } catch {
-                    // One bad encode skips this view, not the whole run.
-                    skipped += 1
+                    // One bad encode tries the next candidate, not a
+                    // skipped view.
                     Self.logger.error("JPEG encode failed for view \(i + 1, privacy: .public): \(error.localizedDescription, privacy: .public)")
                 }
-            } else {
+            }
+            if !wroteView {
                 skipped += 1
-                Self.logger.warning("View \(i + 1, privacy: .public)/\(views, privacy: .public): no in-window candidate frames")
+                if candidates.isEmpty {
+                    Self.logger.warning("View \(i + 1, privacy: .public)/\(views, privacy: .public): no in-window candidate frames")
+                } else {
+                    Self.logger.warning("View \(i + 1, privacy: .public)/\(views, privacy: .public): all candidate frames unavailable")
+                }
             }
             onProgress(Double(i + 1) / Double(views))
         }
@@ -299,50 +340,58 @@ struct FrameExtractor: Sendable {
                 times.append(CMTime(seconds: requestT, preferredTimescale: 6000))
             }
 
-            var best: (score: Float, image: CGImage, t: Double)?
+            // Collect-then-pick, as in `extract`: the global `seen` set is
+            // claimed on successful write, so a frame decoded here but
+            // better suited to the neighboring window never blocks it, and
+            // a failed encode never burns the frame for later windows.
+            var candidates: [(score: Float, image: CGImage, t: Double)] = []
+            candidates.reserveCapacity(3)
             for await result in generator.images(for: times) {
                 try Task.checkCancellation()
                 switch result {
                 case .success(_, let image, let actualTime):
                     let at = CMTimeGetSeconds(actualTime)
                     guard at.isFinite else { continue }
-                    guard seen.insert(Int((at * 1000).rounded())).inserted else { continue }
-                    let score = Self.sharpness(of: image)
-                    if best == nil || score > best!.score {
-                        best = (score, image, at)
-                    }
+                    candidates.append((score: Self.sharpness(of: image), image: image, t: at))
                 case .failure(_, let error):
                     Self.logger.warning("Frame request failed: \(error.localizedDescription, privacy: .public)")
                 }
             }
-
-            if let best {
-                let url = imagesURL.appending(
-                    path: String(format: "shot_%06d.jpg", firstShotIndex + i),
-                    directoryHint: .notDirectory
-                )
+            candidates.sort { $0.score > $1.score }
+            let url = imagesURL.appending(
+                path: String(format: "shot_%06d.jpg", firstShotIndex + i),
+                directoryHint: .notDirectory
+            )
+            var wroteWindow = false
+            for candidate in candidates {
+                let key = Self.timeKey(candidate.t)
+                guard !seen.contains(key) else { continue }
                 do {
-                    try Self.writeJPEG(best.image, to: url)
+                    try Self.writeJPEG(candidate.image, to: url)
                     manifest.append(
                         shot: firstShotIndex + i,
                         file: url.lastPathComponent,
-                        takenAt: baseDate.addingTimeInterval(best.t),
+                        takenAt: baseDate.addingTimeInterval(candidate.t),
                         thetaDeg: nil,
                         method: Self.manifestMethod(for: "solver"),
-                        sharpness: best.score
+                        sharpness: candidate.score
                     )
+                    seen.insert(key)
                     written += 1
+                    wroteWindow = true
+                    break
                 } catch {
                     Self.logger.error("JPEG encode failed for window \(i + 1, privacy: .public): \(error.localizedDescription, privacy: .public)")
                 }
-            } else {
+            }
+            if !wroteWindow {
                 Self.logger.warning("Window \(i + 1, privacy: .public)/\(views, privacy: .public): no candidate frames")
             }
             onProgress(Double(i + 1) / Double(views))
         }
         let skipped = views - written
         if skipped > 0 {
-            onCoverageWarning("\(written) of \(views) windows yielded frames")
+            onCoverageWarning(String(localized: "\(written) of \(views) windows yielded frames"))
         }
         return written
     }
@@ -384,9 +433,14 @@ struct FrameExtractor: Sendable {
         return n > 0 ? Float(total / Double(n)) : 0
     }
 
+    /// Writes via a temp sibling + rename, so a crash mid-encode can never
+    /// leave a truncated JPEG in the images directory for the reconstructor
+    /// to choke on. The `.part` suffix is outside the reconstructor's image
+    /// allowlist, so even a stranded temp file is ignored.
     private static func writeJPEG(_ cgImage: CGImage, to url: URL) throws {
+        let tmpURL = url.appendingPathExtension("part")
         guard let dest = CGImageDestinationCreateWithURL(
-            url as CFURL,
+            tmpURL as CFURL,
             UTType.jpeg.identifier as CFString,
             1,
             nil
@@ -399,8 +453,25 @@ struct FrameExtractor: Sendable {
             [kCGImageDestinationLossyCompressionQuality as String: 0.92] as CFDictionary
         )
         guard CGImageDestinationFinalize(dest) else {
+            try? FileManager.default.removeItem(at: tmpURL)
             throw YawError.frameEncodingFailed
         }
+        do {
+            if FileManager.default.fileExists(atPath: url.path(percentEncoded: false)) {
+                try FileManager.default.removeItem(at: url)
+            }
+            try FileManager.default.moveItem(at: tmpURL, to: url)
+        } catch {
+            try? FileManager.default.removeItem(at: tmpURL)
+            throw error
+        }
+    }
+
+    /// Millisecond key for the global dedup set. Capture here is 30/60 fps
+    /// (frames >= 16 ms apart), so ms resolution never merges two distinct
+    /// physical frames.
+    private static func timeKey(_ t: Double) -> Int {
+        Int((t * 1000).rounded())
     }
 
     private static func angularDistance(_ a: Double, _ b: Double) -> Double {

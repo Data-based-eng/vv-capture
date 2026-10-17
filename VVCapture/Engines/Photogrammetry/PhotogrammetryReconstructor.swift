@@ -69,6 +69,10 @@ struct PhotogrammetryReconstructor {
         onProgress: @escaping @MainActor (ReconstructionProgress) -> Void
     ) async throws -> Output {
 
+        // Fail fast: don't probe files and spin up a GPU session for a task
+        // that's already been cancelled.
+        try Task.checkCancellation()
+
         guard PhotogrammetrySession.isSupported else {
             throw ScanEngineError.reconstructionFailed(String(localized: "This device doesn't support on-device photogrammetry."))
         }
@@ -107,7 +111,7 @@ struct PhotogrammetryReconstructor {
             } catch {
                 effectiveMask = nil
                 Self.logger.error("Couldn't read sample, mask disabled: \(error.localizedDescription, privacy: .public)")
-                await onWarning("Couldn't apply mask, background included: \(error.localizedDescription)")
+                await onWarning(String(localized: "Couldn't apply mask, background included: \(error.localizedDescription)"))
             }
         }
 
@@ -128,7 +132,12 @@ struct PhotogrammetryReconstructor {
             // can plausibly fix. A failure *during* the solve would fail the
             // same way unmasked, so it is not retried: retrying would burn
             // another multi-minute run for nothing.
-            if establishment.underlying is CancellationError { throw establishment.underlying }
+            // `underlying` is always the mapped ScanEngineError here — never the
+            // raw CancellationError — so a cancelled task has to be detected via
+            // the task itself. Without this, cancelling during masked setup
+            // would burn a second session just to be cancelled again, and show
+            // a misleading "retried without mask" warning first.
+            try Task.checkCancellation()
             Self.logger.error("Masked run rejected at setup, retrying unmasked: \(establishment.underlying.localizedDescription, privacy: .public)")
             await onWarning(String(localized: "Masked processing failed, retried without mask."))
             try? FileManager.default.removeItem(at: workspace.modelURL)
@@ -252,6 +261,10 @@ struct PhotogrammetryReconstructor {
                         Self.logger.error("Pose request failed: \(error.localizedDescription, privacy: .public)")
                         break
                     }
+                    // The session is still alive here: without an explicit
+                    // cancel the GPU pipeline keeps running after we throw
+                    // (only task cancellation reaches the onCancel handler).
+                    session.cancel()
                     throw ScanEngineError.reconstructionFailed(error.localizedDescription)
 
                 case .processingCancelled:
@@ -268,6 +281,9 @@ struct PhotogrammetryReconstructor {
                 }
             }
             guard FileManager.default.fileExists(atPath: workspace.modelURL.path(percentEncoded: false)) else {
+                // The outputs stream ended without a terminal state; make sure
+                // the session isn't still running before we throw.
+                session.cancel()
                 throw ScanEngineError.reconstructionFailed(String(localized: "Session ended without producing a model."))
             }
             return Output(modelURL: workspace.modelURL, poses: diagnostics)

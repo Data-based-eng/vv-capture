@@ -8,25 +8,23 @@ import os
 /// always carries the capture timestamp and file name, so a downstream tool
 /// can derive θ = ω·Δt once the turntable RPM is known. The on-disk contract
 /// is documented in the README ("### `yaw.jsonl`"); `YawEntry` is its schema.
-struct YawEntry: Codable {
+struct YawEntry: Codable, Sendable {
     /// 1-based shot index in the shared capture sequence, matching
     /// `shot_%06d.<ext>` — `.heic` for stills, `.jpg` for extracted video
     /// frames. Unique across stills and video frames within one scan.
-    var shot: Int
-    var file: String
-    var timestamp: Date
+    let shot: Int
+    let file: String
+    let timestamp: Date
     /// Yaw in degrees, clockwise looking down at the turntable. Nil until the
     /// estimator fills it in.
-    var thetaDeg: Double?
+    let thetaDeg: Double?
     /// How thetaDeg was produced: "timestamp" (estimator pending), "marker",
-    /// "vision", "rpm".
-    ///
-    /// NOTE: the video frame extractor currently writes its own method strings
-    /// ("video-marker", "video-rpm", "solver") — see VideoFrameExtractor. That
-    /// side needs aligning to this vocabulary.
-    var method: String
+    /// "vision", "rpm". The video frame extractor maps its internal strings
+    /// onto this vocabulary before appending (see `manifestMethod` in
+    /// VideoFrameExtractor).
+    let method: String
     /// Gradient-energy sharpness score from capture, when measured.
-    var sharpness: Float?
+    let sharpness: Float?
 }
 
 /// Append-only writer (plus a read-back for tooling) for a scan's `yaw.jsonl`.
@@ -96,9 +94,10 @@ final class YawManifest: Sendable {
     /// line must not nuke the manifest. Intended for downstream tooling (e.g.
     /// RPM backfill); nothing in the capture path calls this yet.
     func load() throws -> [YawEntry] {
-        lock.lock()
-        defer { lock.unlock() }
-        let text = try String(contentsOf: url, encoding: .utf8)
+        // Snapshot under the lock, parse outside it: decoding the snapshot
+        // needs no synchronization, and a large manifest shouldn't block
+        // appends while every line is decoded.
+        let text = try readSnapshot()
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         var entries: [YawEntry] = []
@@ -111,5 +110,13 @@ final class YawManifest: Sendable {
             }
         }
         return entries
+    }
+
+    /// Reads the whole file while holding the lock. The caller parses the
+    /// returned snapshot without the lock held.
+    private func readSnapshot() throws -> String {
+        lock.lock()
+        defer { lock.unlock() }
+        return try String(contentsOf: url, encoding: .utf8)
     }
 }

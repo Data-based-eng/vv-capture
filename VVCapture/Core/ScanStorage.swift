@@ -56,7 +56,7 @@ enum ScanStorageError: LocalizedError {
 @MainActor
 @Observable
 final class ScanStorage {
-    private static let logger = Logger(subsystem: "com.visionvend.capture", category: "storage")
+    nonisolated private static let logger = Logger(subsystem: "com.visionvend.capture", category: "storage")
 
     private(set) var scans: [ScanRecord] = []
 
@@ -82,7 +82,20 @@ final class ScanStorage {
             return
         }
         if load() {
-            sweepOrphanedWorkspaces()
+            // Reclaiming gigabytes of orphaned workspaces must not stall
+            // launch on the main thread: the sweep only touches directories
+            // no library record points at, so it can run in the background.
+            // The cutoff below closes a race the backgrounding opened: a
+            // capture started after launch creates a fresh UUID directory
+            // with no library record yet, which the old synchronous sweep
+            // could never see but this one can - anything created after this
+            // point belongs to the live session, not to orphans.
+            let liveIDs = Set(scans.map(\.id))
+            let root = scansRoot
+            let sweepCutoff = Date()
+            Task.detached(priority: .utility) {
+                Self.sweepOrphanedWorkspaces(root: root, liveIDs: liveIDs, notNewerThan: sweepCutoff)
+            }
         }
     }
 
@@ -139,15 +152,26 @@ final class ScanStorage {
     /// `commit()` leaves a full workspace no record points at. The OS gives no
     /// guarantee of purging it, so the app does — every UUID-named directory
     /// under the scans root with no matching library record is deleted.
-    private func sweepOrphanedWorkspaces() {
-        let liveIDs = Set(scans.map(\.id))
-        guard let names = try? fileManager.contentsOfDirectory(atPath: scansRoot.path(percentEncoded: false)) else { return }
+    ///
+    /// Runs off the main thread (see `init`): only the inputs are captured,
+    /// nothing here touches in-memory library state.
+    nonisolated private static func sweepOrphanedWorkspaces(root: URL, liveIDs: Set<UUID>, notNewerThan cutoff: Date) {
+        let fileManager = FileManager.default
+        guard let names = try? fileManager.contentsOfDirectory(atPath: root.path(percentEncoded: false)) else { return }
         for name in names {
             guard let id = UUID(uuidString: name), !liveIDs.contains(id) else { continue }
-            let dir = scansRoot.appending(path: name, directoryHint: .isDirectory)
+            let dir = root.appending(path: name, directoryHint: .isDirectory)
             var isDirectory: ObjCBool = false
             guard fileManager.fileExists(atPath: dir.path(percentEncoded: false), isDirectory: &isDirectory),
                   isDirectory.boolValue
+            else { continue }
+            // A workspace created after the sweep was scheduled belongs to a
+            // capture started after launch (fresh UUID, no record yet). When
+            // the date can't be read, err on keeping: it is reconsidered on
+            // the next launch.
+            guard let attrs = try? fileManager.attributesOfItem(atPath: dir.path(percentEncoded: false)),
+                  let created = attrs[.creationDate] as? Date,
+                  created <= cutoff
             else { continue }
             do {
                 try fileManager.removeItem(at: dir)

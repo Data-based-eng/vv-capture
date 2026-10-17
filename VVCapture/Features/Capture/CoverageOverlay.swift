@@ -24,7 +24,11 @@ struct CoverageCard: View {
     var body: some View {
         VStack(spacing: 2) {
             CoverageCanvas(indices: indices, notchCount: notchCount)
-            Text(complete ? "Full turn complete" : "\(covered)/\(notchCount) sides")
+            // String(localized:): the ternary resolves to String, not a
+            // LocalizedStringKey, so the strings are localized at creation.
+            Text(complete
+                ? String(localized: "Full turn complete")
+                : String(localized: "\(covered)/\(notchCount) sides"))
                 .font(.caption2.monospacedDigit().weight(.semibold))
                 .foregroundStyle(complete ? Brand.phosphorBright : Brand.textSecondary)
                 .contentTransition(.numericText())
@@ -35,7 +39,9 @@ struct CoverageCard: View {
         .transition(.move(edge: .leading).combined(with: .opacity))
         // VoiceOver reads one summary instead of an unlabeled canvas of ticks.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(complete ? "Full turn complete" : "\(covered) of \(notchCount) sides captured")
+        .accessibilityLabel(complete
+            ? String(localized: "Full turn complete")
+            : String(localized: "\(covered) of \(notchCount) sides captured"))
     }
 }
 

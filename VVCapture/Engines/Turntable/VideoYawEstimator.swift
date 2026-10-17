@@ -26,19 +26,22 @@ enum YawError: LocalizedError {
     case orbitVideoTooShort
     case noRotationDetected
     case frameEncodingFailed
+    case pixelConversionFailed
 
     var errorDescription: String? {
         switch self {
         case .noVideoTrack:
-            "The recorded file has no video track."
+            String(localized: "The recorded file has no video track.")
         case .videoTooShort:
-            "The video is too short to measure rotation."
+            String(localized: "The video is too short to measure rotation.")
         case .orbitVideoTooShort:
-            "The orbit video is too short — walk around the product for at least a few seconds."
+            String(localized: "The orbit video is too short — walk around the product for at least a few seconds.")
         case .noRotationDetected:
-            "No turntable rotation was detected in the video. Make sure the table is turning while recording, with a few seconds of still footage before and after."
+            String(localized: "No turntable rotation was detected in the video. Make sure the table is turning while recording, with a few seconds of still footage before and after.")
         case .frameEncodingFailed:
-            "A video frame could not be saved."
+            String(localized: "A video frame could not be saved.")
+        case .pixelConversionFailed:
+            String(localized: "A video frame could not be decoded for analysis.")
         }
     }
 }
@@ -111,6 +114,12 @@ struct YawEstimator: Sendable {
         let asset = AVURLAsset(url: videoURL)
         let duration = CMTimeGetSeconds(try await asset.load(.duration))
         guard duration >= 10 else { throw YawError.videoTooShort }
+        // A trackless file (audio-only export, corrupt container) would
+        // otherwise fail opaquely inside the frame grabber below — and the
+        // `noVideoTrack` case has never been thrown by anything until now.
+        guard try await !asset.loadTracks(withMediaType: .video).isEmpty else {
+            throw YawError.noVideoTrack
+        }
 
         // Sample ~4 fps, downscaled. The generator reports the actual frame
         // time for each grab, so the series stays truthful even when the
@@ -151,6 +160,11 @@ struct YawEstimator: Sendable {
                 continue
             }
             guard let pixels = Self.pixels(of: cg) else {
+                // A frame that decodes but can't be converted to pixels on
+                // EVERY attempt is a decoder/pixel-buffer problem, not a
+                // turntable problem — record it so the throw below doesn't
+                // blame the table (same intent as firstGrabError above).
+                if firstGrabError == nil { firstGrabError = YawError.pixelConversionFailed }
                 grabFailures += 1
                 t += step
                 continue
@@ -238,7 +252,7 @@ struct YawEstimator: Sendable {
         var omega = nominalOmega
         var method = "video-rpm"
         var confidence = 0.0
-        var warning: String? = "The rim marker wasn't found, so angles use the rotation speed setting. For measured angles, stick a 2 cm square of bright red or pink tape on the turntable's rim."
+        var warning: String? = String(localized: "The rim marker wasn't found, so angles use the rotation speed setting. For measured angles, stick a 2 cm square of bright red or pink tape on the turntable's rim.")
 
         // Fit only on the motion window: the marker sits still in the lead-in
         // and tail, and those flat segments would bias the period.
@@ -267,7 +281,7 @@ struct YawEstimator: Sendable {
 
         let coverageDeg = omega * (t1 - t0)
         if coverageDeg < 324 {
-            let note = "The video covers only \(Int(coverageDeg))° of rotation — record at least one full turn."
+            let note = String(localized: "The video covers only \(Int(coverageDeg))° of rotation — record at least one full turn.")
             warning = [warning, note].compactMap { $0 }.joined(separator: " ")
         }
 
@@ -314,14 +328,22 @@ struct YawEstimator: Sendable {
     /// Mean absolute difference across all three channels — motion in any
     /// color registers. (Green-only differencing nearly missed a pure-red
     /// marker.)
+    ///
+    /// Pixel-strided and length-tolerant: the old `stride(to: a.count, by: 4)`
+    /// form read `a[i + 2]` past the end whenever the buffer length wasn't a
+    /// multiple of 4. All current callers pass BGRA buffers, but the helper no
+    /// longer traps if that ever changes.
     private static func meanAbsDiff(_ a: [UInt8], _ b: [UInt8]) -> Double {
+        let pixels = min(a.count, b.count) / 4
+        guard pixels > 0 else { return 0 }
         var sum = 0.0
-        for i in stride(from: 0, to: a.count, by: 4) {
+        for p in 0..<pixels {
+            let i = p * 4
             sum += Double(abs(Int(a[i]) - Int(b[i])))
             sum += Double(abs(Int(a[i + 1]) - Int(b[i + 1])))
             sum += Double(abs(Int(a[i + 2]) - Int(b[i + 2])))
         }
-        return sum / Double(3 * (a.count / 4))
+        return sum / Double(3 * pixels)
     }
 
     /// Centroid of the largest red/pink blob — the rim marker. Returns nil
@@ -358,6 +380,7 @@ struct YawEstimator: Sendable {
         stack.reserveCapacity(4096)
         var bestArea = 0
         var bestSumX = 0.0, bestSumY = 0.0
+        var oversizedBlob = false
         for seed in 0..<n where mask[seed] && !visited[seed] {
             visited[seed] = true
             stack.removeAll(keepingCapacity: true)
@@ -366,6 +389,14 @@ struct YawEstimator: Sendable {
             var sumX = 0.0, sumY = 0.0
             while let p = stack.popLast() {
                 area += 1
+                if area > 15_000 {
+                    // Far beyond any plausible marker — and the frame is
+                    // rejected below whenever the largest blob exceeds
+                    // 15_000, so stop counting this component early instead
+                    // of flood-filling tens of thousands more pixels.
+                    oversizedBlob = true
+                    break
+                }
                 sumX += Double(p % w)
                 sumY += Double(p / w)
                 let x = p % w
@@ -391,10 +422,13 @@ struct YawEstimator: Sendable {
                 bestSumX = sumX
                 bestSumY = sumY
             }
+            if oversizedBlob { break }
         }
         // A 2 cm tape square is a few hundred px at 480×270; anything above
         // ~12% of the frame is a red shirt or product, not the marker.
-        guard bestArea >= 20, bestArea <= 15_000 else { return nil }
+        // (An oversized blob forces rejection here even though its exact area
+        // was never finished counting.)
+        guard bestArea >= 20, bestArea <= 15_000, !oversizedBlob else { return nil }
         return CGPoint(x: bestSumX / Double(bestArea), y: bestSumY / Double(bestArea))
     }
 

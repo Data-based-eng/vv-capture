@@ -70,6 +70,12 @@ struct MaskedSampleSequence: Sequence {
                             normalizedRect: normalizedRect
                         )
                         cachedMaskSize = (width, height)
+                        if cachedMask == nil {
+                            // Silent unmasked fallback would hide a broken mask
+                            // (or a degenerate drag rect) from every later
+                            // diagnosis — say so once, per size change.
+                            Self.logger.error("Object mask creation failed, proceeding unmasked")
+                        }
                     }
                     sample.objectMask = cachedMask
                 }

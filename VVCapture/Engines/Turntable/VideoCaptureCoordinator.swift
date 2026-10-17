@@ -70,6 +70,25 @@ final class VideoCaptureCoordinator: NSObject, @unchecked Sendable {
     /// so it can't race the delegate block. Cleared when a new recording
     /// starts, so a stale URL is never handed back.
     private var finalizedURL: URL?
+    /// Set when the coordinator gives up on the in-flight take — the
+    /// `awaitFinalized()` timeout, or a take that went live after its start
+    /// was already declared failed. The take's late `didFinishRecordingTo`
+    /// must still reset state and resume waiters, but must NOT deliver
+    /// `onFinishedRecording`: the engine already moved on (it warned "built
+    /// from stills only", and its handler blindly assigns `recordedVideoURL`,
+    /// which the video pipeline would then process). Consumed-and-cleared by
+    /// the next `didFinishRecordingTo`; cleared by `startRecording()` for a
+    /// new take. Guarded by `stateLock`.
+    private var suppressFinishCallback = false
+    /// True while the session is meant to be running. sessionQueue-confined
+    /// (every read and write happens on `sessionQueue`). The start watchdog
+    /// must not report "camera failed to start" after a legitimate quick
+    /// stop — teardown/cancel inside the 5 s window.
+    private var sessionShouldBeRunning = false
+    /// Identifies `sessionQueue` so `awaitFinalized()` can skip its
+    /// `sessionQueue.sync` barrier when already on the queue (`sync` from
+    /// the queue itself deadlocks).
+    private let sessionQueueKey = DispatchSpecificKey<Void>()
 
     private let onFinishedRecording: @Sendable (URL) -> Void
     private let onFailure: @Sendable (String) -> Void
@@ -83,6 +102,7 @@ final class VideoCaptureCoordinator: NSObject, @unchecked Sendable {
         self.onFinishedRecording = onFinishedRecording
         self.onFailure = onFailure
         super.init()
+        sessionQueue.setSpecific(key: sessionQueueKey, value: ())
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleSessionInterruption(_:)),
@@ -222,6 +242,7 @@ final class VideoCaptureCoordinator: NSObject, @unchecked Sendable {
         sessionQueue.async { [weak self] in
             guard let self else { return }
             guard !self.session.isRunning else { return }
+            self.sessionShouldBeRunning = true
             self.session.startRunning()
             self.armSessionStartWatchdog()
         }
@@ -232,9 +253,12 @@ final class VideoCaptureCoordinator: NSObject, @unchecked Sendable {
     /// session up. Because this check is queued on `sessionQueue` *after* the
     /// `startRunning()` block, it runs strictly after `startRunning()`
     /// returned — if the session still isn't running then, it never will be.
+    /// Gated on `sessionShouldBeRunning`: a legitimate quick stop
+    /// (teardown/cancel) inside the 5 s window must not surface a bogus
+    /// "camera failed to start".
     private func armSessionStartWatchdog() {
         sessionQueue.asyncAfter(deadline: .now() + 5) { [weak self] in
-            guard let self, !self.session.isRunning else { return }
+            guard let self, self.sessionShouldBeRunning, !self.session.isRunning else { return }
             Self.logger.error("Camera session never reached running — starved by another app?")
             self.onFailure(String(localized: "The camera failed to start — it may be in use by another app."))
         }
@@ -261,7 +285,11 @@ final class VideoCaptureCoordinator: NSObject, @unchecked Sendable {
     /// handoff on the session actually being down.
     func stop() {
         sessionQueue.async { [weak self] in
-            guard let self, self.session.isRunning else { return }
+            guard let self else { return }
+            // Clear first: the start watchdog must stay silent after a
+            // legitimate stop, even if the session never got running.
+            self.sessionShouldBeRunning = false
+            guard self.session.isRunning else { return }
             self.session.stopRunning()
         }
     }
@@ -272,6 +300,7 @@ final class VideoCaptureCoordinator: NSObject, @unchecked Sendable {
     /// *return* is the completion signal.
     func stop(completion: @escaping @Sendable () -> Void) {
         sessionQueue.async { [weak self] in
+            self?.sessionShouldBeRunning = false
             self?.session.stopRunning()
             completion()
         }
@@ -292,18 +321,30 @@ final class VideoCaptureCoordinator: NSObject, @unchecked Sendable {
     /// On timeout the recording state is forcibly reset (a stuck non-idle
     /// state would otherwise no-op every later call and kill video for the
     /// session) and nil is returned so the engine can warn instead of
-    /// silently building from stills.
+    /// silently building from stills. If the awaiting task is cancelled, the
+    /// take is abandoned quietly instead: state is reset and the late
+    /// delegate suppressed, but no `onFailure` fires — cancellation is not a
+    /// recording failure.
     func awaitFinalized() async -> URL? {
         let deadline = Date().addingTimeInterval(10)
+        var wasCancelled = false
         while Date() < deadline {
             if stateLock.withLock({ recordingState == .idle }) { break }
+            // `Task.sleep` throws `CancellationError`, but `try?` would
+            // swallow it and keep polling to the deadline — check explicitly
+            // so a cancelled finish abandons the take promptly instead.
+            if Task.isCancelled { wasCancelled = true; break }
             try? await Task.sleep(for: .milliseconds(100))
         }
         // Barrier: the delegate block that flips the state to `.idle` runs
         // `finishRecording(url:)` on this same queue immediately after — sync
         // here so the `finalizedURL` read below can't race it and return nil
-        // for a perfectly good recording.
-        sessionQueue.sync {}
+        // for a perfectly good recording. Skipped when already on
+        // `sessionQueue`: `sync` from the queue itself deadlocks, and being
+        // on the queue already serialises us after the delegate block.
+        if DispatchQueue.getSpecific(key: sessionQueueKey) == nil {
+            sessionQueue.sync {}
+        }
         let wasPending = stateLock.withLock { () -> Bool in
             let pending = recordingState != .idle
             if pending {
@@ -313,12 +354,39 @@ final class VideoCaptureCoordinator: NSObject, @unchecked Sendable {
             return pending
         }
         if wasPending {
-            Self.logger.error("Timed out waiting for the video file to finalise; recording state reset")
+            if wasCancelled {
+                // The caller is going away — abandon the take quietly.
+                // Cancellation isn't a recording failure, so no `onFailure`.
+                Self.logger.info("awaitFinalized() cancelled; abandoning the in-flight take")
+            } else {
+                Self.logger.error("Timed out waiting for the video file to finalise; recording state reset")
+            }
+            // Don't strand the movie output: without this the take keeps
+            // recording to the 15-minute cap as a zombie, and its eventual
+            // `didFinishRecordingTo` would deliver `onFinishedRecording` for
+            // a take the engine already dropped (its handler blindly assigns
+            // `recordedVideoURL`, which the pipeline would then process
+            // despite the "built from stills only" warning). Force
+            // finalisation now; `suppressFinishCallback` keeps the late
+            // delegate from reporting success.
+            stateLock.withLock { self.suppressFinishCallback = true }
+            sessionQueue.async { [weak self] in
+                self?.movieOutput.stopRecording()
+            }
             self.drainStopRecordingCompletion()
-            onFailure(String(localized: "Timed out waiting for the video file to finalise."))
+            if !wasCancelled {
+                onFailure(String(localized: "Timed out waiting for the video file to finalise."))
+            }
             return nil
         }
-        return stateLock.withLock { finalizedURL }
+        // Consume-on-read: a second call must not hand back the previous take's
+        // URL. `startRecording()` also clears it, so this is belt and braces
+        // against a stale-URL double read.
+        return stateLock.withLock { () -> URL? in
+            let url = finalizedURL
+            finalizedURL = nil
+            return url
+        }
     }
 
     /// Resumes a stashed `stopRecording(completion:)` waiter, if any, and
@@ -409,11 +477,22 @@ final class VideoCaptureCoordinator: NSObject, @unchecked Sendable {
                 self.recordingState = .starting
                 // A stale finalised URL must never be handed back for the new take.
                 self.finalizedURL = nil
+                // A previous take's abandonment must not suppress this take's
+                // finish callback.
+                self.suppressFinishCallback = false
                 return false
             }
-            guard !alreadyActive else { return }
+            guard !alreadyActive else {
+                // A take is already in flight or finalising (same videoURL —
+                // starting another now would corrupt the handoff). Loud
+                // enough to spot a dropped start in the log, quiet enough
+                // for the normal double-call guard.
+                Self.logger.debug("startRecording() ignored: recording state is not idle")
+                return
+            }
 
             if !self.session.isRunning {
+                self.sessionShouldBeRunning = true
                 self.session.startRunning()
                 self.armSessionStartWatchdog()
             }
@@ -425,18 +504,26 @@ final class VideoCaptureCoordinator: NSObject, @unchecked Sendable {
 
             // Silent-start watchdog: no `didStartRecordingTo` within 5 s means
             // the recording never went live; reset so later calls aren't no-ops.
+            // If a stop was requested while the start was in flight, the
+            // engine already moved on — report nothing instead of a bogus
+            // "failed to start".
             self.sessionQueue.asyncAfter(deadline: .now() + 5) { [weak self] in
                 guard let self else { return }
-                let stillStarting = self.stateLock.withLock { () -> Bool in
-                    guard self.recordingState == .starting else { return false }
+                let (stillStarting, stopWasRequested) = self.stateLock.withLock { () -> (Bool, Bool) in
+                    guard self.recordingState == .starting else { return (false, false) }
+                    let stopReq = self.stopRequestedDuringStart
                     self.recordingState = .idle
                     self.stopRequestedDuringStart = false
-                    return true
+                    return (true, stopReq)
                 }
                 if stillStarting {
-                    Self.logger.error("Recording start was never confirmed by the delegate; state reset")
                     self.drainStopRecordingCompletion()
-                    self.onFailure(String(localized: "Video recording failed to start."))
+                    if stopWasRequested {
+                        Self.logger.info("Recording start watchdog fired after a stop was requested; no failure reported")
+                    } else {
+                        Self.logger.error("Recording start was never confirmed by the delegate; state reset")
+                        self.onFailure(String(localized: "Video recording failed to start."))
+                    }
                 }
             }
         }
@@ -478,7 +565,12 @@ final class VideoCaptureCoordinator: NSObject, @unchecked Sendable {
     /// `onFinishedRecording` / `onFailure`.
     func stopRecording(completion: @escaping @Sendable () -> Void) {
         sessionQueue.async { [weak self] in
-            guard let self else { return }
+            guard let self else {
+                // The coordinator is gone — resume the waiter instead of
+                // stranding `awaitRecordingStopped()` forever.
+                completion()
+                return
+            }
             let alreadyIdle = self.stateLock.withLock { () -> Bool in
                 if self.recordingState == .idle { return true }
                 self.stopRecordingCompletion = completion
@@ -512,22 +604,50 @@ extension VideoCaptureCoordinator: AVCaptureFileOutputRecordingDelegate {
         // all state lives there / behind `stateLock`.
         sessionQueue.async { [weak self] in
             guard let self else { return }
-            let stopImmediately = self.stateLock.withLock { () -> Bool in
+            enum StartResolution { case confirmed, duplicate, stopDeferred, stopOrphaned }
+            let resolution = self.stateLock.withLock { () -> StartResolution in
                 if self.stopRequestedDuringStart {
                     self.stopRequestedDuringStart = false
                     self.recordingState = .stopping
-                    return true
+                    return .stopDeferred
                 }
-                self.recordingState = .recording
-                return false
+                switch self.recordingState {
+                case .starting:
+                    self.recordingState = .recording
+                    return .confirmed
+                case .recording, .stopping:
+                    // The take is (or was) owned: `.recording` is a duplicate
+                    // confirmation for the live take; `.stopping` means a stop
+                    // is already in flight and its finish is expected.
+                    // Either way this must NOT be treated as an orphan —
+                    // suppressing or stopping here would kill/mute a take the
+                    // engine is actively finalising.
+                    return .duplicate
+                case .idle:
+                    // A take went live with no start in flight: the state was
+                    // reset by a watchdog after the engine gave up on it (or
+                    // was already told the start failed). Nobody owns this
+                    // take — stop it at once instead of letting it run to the
+                    // 15-minute cap, and suppress its finish callback: the
+                    // failure was already reported.
+                    self.suppressFinishCallback = true
+                    self.recordingState = .stopping
+                    return .stopOrphaned
+                }
             }
-            if stopImmediately {
+            switch resolution {
+            case .confirmed:
+                Self.logger.info("Video recording confirmed started")
+            case .duplicate:
+                Self.logger.warning("Duplicate recording-start confirmation for an owned take; ignoring")
+            case .stopDeferred:
                 // A stop was requested while the start was in flight: stop now
                 // that there is actually something to stop.
                 Self.logger.info("Recording started after stop was requested; stopping immediately")
                 self.movieOutput.stopRecording()
-            } else {
-                Self.logger.info("Video recording confirmed started")
+            case .stopOrphaned:
+                Self.logger.error("Recording went live with no start in flight (state was reset by a watchdog); stopping the orphaned take")
+                self.movieOutput.stopRecording()
             }
         }
     }
@@ -543,9 +663,41 @@ extension VideoCaptureCoordinator: AVCaptureFileOutputRecordingDelegate {
         // on any thread.
         sessionQueue.async { [weak self] in
             guard let self else { return }
-            self.stateLock.withLock {
+            enum FinishResolution { case stale, suppressed, deliver }
+            let resolution = self.stateLock.withLock { () -> FinishResolution in
+                guard self.recordingState != .starting else {
+                    // A finish for a take whose start was never confirmed:
+                    // the take was abandoned (a watchdog/timeout already reset
+                    // the state and resumed its waiters), and a new take may
+                    // already be starting. Touching state here would stomp the
+                    // new take back to `.idle`, and its own start confirmation
+                    // would then be mistaken for an orphan and killed. The old
+                    // take's waiters were already resumed by the watchdog or
+                    // timeout that moved the state on, so there is nothing to
+                    // drain — report nothing and leave the new take alone.
+                    return .stale
+                }
                 self.recordingState = .idle
                 self.stopRequestedDuringStart = false
+                defer { self.suppressFinishCallback = false }
+                return self.suppressFinishCallback ? .suppressed : .deliver
+            }
+            switch resolution {
+            case .stale:
+                Self.logger.error("Ignoring stale finish callback for a take that never confirmed starting")
+                return
+            case .suppressed:
+                // The recording has stopped; resume the waiter first.
+                self.drainStopRecordingCompletion()
+                // The engine abandoned this take (finalise timeout) or was
+                // already told it failed (orphaned late start). State is
+                // reset and waiters are resumed; report nothing further —
+                // delivering success now would contradict the failure the
+                // engine already acted on.
+                Self.logger.info("Discarding finish callback for an abandoned take")
+                return
+            case .deliver:
+                break
             }
             // The recording has stopped either way; resume the waiter first.
             self.drainStopRecordingCompletion()

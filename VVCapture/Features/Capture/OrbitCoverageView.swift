@@ -37,7 +37,11 @@ struct OrbitCoverageCard: View {
                     Text("\(Int(coverageDegrees))°")
                         .font(.system(size: 22, weight: .bold, design: .monospaced))
                         .foregroundStyle(Brand.phosphor)
-                    Text(coveredBins.count >= binCount ? "Full orbit" : "of 360°")
+                    // String(localized:): the ternary resolves to String, not a
+                    // LocalizedStringKey, so the strings are localized at creation.
+                    Text(coveredBins.count >= binCount
+                        ? String(localized: "Full orbit")
+                        : String(localized: "of 360°"))
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(Brand.textTertiary)
                 }
@@ -57,8 +61,10 @@ struct OrbitCoverageCard: View {
     }
 
     private var accessibilitySummary: String {
+        // String(localized:): this property returns String, so the strings are
+        // localized at creation — the label would otherwise show the raw key.
         coveredBins.count >= binCount
-            ? "Full orbit covered"
-            : "\(Int(coverageDegrees)) of 360 degrees covered"
+            ? String(localized: "Full orbit covered")
+            : String(localized: "\(Int(coverageDegrees)) of 360 degrees covered")
     }
 }

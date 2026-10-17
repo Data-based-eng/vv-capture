@@ -121,9 +121,9 @@ struct PoseDiagnostics: Sendable {
     /// for `.interior`, and whenever too few cameras solved to measure them
     /// (a 0° default is never presented as a measurement).
     var summaryText: String {
-        let alignment = "\(solvedSamples)/\(totalSamples) aligned"
+        let alignment = String(localized: "\(solvedSamples)/\(totalSamples) aligned")
         guard framing == .orbit, anglesValid else { return alignment }
-        return "\(alignment) · azimuth \(azimuthCoverageDegrees)° · elevation \(elevationSpreadDegrees)°"
+        return String(localized: "\(alignment) · azimuth \(azimuthCoverageDegrees)° · elevation \(elevationSpreadDegrees)°")
     }
 
     /// The reason the mesh looks the way it does, when the numbers say so.
@@ -142,9 +142,9 @@ struct PoseDiagnostics: Sendable {
             // One piece of advice for both would be wrong half the time.
             switch framing {
             case .orbit:
-                notes.append("\(dropped) photos couldn't be aligned and never entered the model. The most common cause is light rotating with the object: as the object turns, shadows slide across the surface and the solver can't match the same point in two frames. Make the light soft from all sides, or rotate the lamp with the object.")
+                notes.append(String(localized: "\(dropped) photos couldn't be aligned and never entered the model. The most common cause is light rotating with the object: as the object turns, shadows slide across the surface and the solver can't match the same point in two frames. Make the light soft from all sides, or rotate the lamp with the object."))
             case .interior:
-                notes.append("\(dropped) frames couldn't be aligned and never entered the model — only \(solvedSamples * 100 / totalSamples)% were used. When walking, the most common causes are motion blur and fast turns: pause briefly while rotating the phone and add light. Empty flat walls also leave no pattern to match.")
+                notes.append(String(localized: "\(dropped) frames couldn't be aligned and never entered the model — only \(solvedSamples * 100 / totalSamples)% were used. When walking, the most common causes are motion blur and fast turns: pause briefly while rotating the phone and add light. Empty flat walls also leave no pattern to match."))
             }
         }
 
@@ -152,20 +152,20 @@ struct PoseDiagnostics: Sendable {
         case .orbit:
             if anglesValid, azimuthCoverageDegrees < 300 {
                 if alignmentGood {
-                    notes.append("Azimuth coverage \(azimuthCoverageDegrees)° — the full turn didn't close. The uncovered side will have hallucinated surface.")
+                    notes.append(String(localized: "Azimuth coverage \(azimuthCoverageDegrees)° — the full turn didn't close. The uncovered side will have hallucinated surface."))
                 } else {
                     // Reconciled with the alignment note above: when frames never
                     // aligned, the gap is missing surface, not hallucinated
                     // surface — claiming hallucination would contradict "never
                     // entered the model".
-                    notes.append("Azimuth coverage \(azimuthCoverageDegrees)° — mostly because \(totalSamples - solvedSamples) frames never aligned. Those sides are missing from the model entirely, not just soft: fix the alignment problem above and the coverage follows.")
+                    notes.append(String(localized: "Azimuth coverage \(azimuthCoverageDegrees)° — mostly because \(totalSamples - solvedSamples) frames never aligned. Those sides are missing from the model entirely, not just soft: fix the alignment problem above and the coverage follows."))
                 }
             }
 
             // The single-ring case. Worth stating even when everything else is fine,
             // because it is the difference between a turntable pass and an orbit.
             if anglesValid, elevationSpreadDegrees < 15 {
-                notes.append("Almost all frames are from the same height (\(elevationSpreadDegrees)° elevation spread). Cameras on a single ring give no vertical parallax, so top and bottom surfaces come out soft. Changing the phone's height/angle and shooting a second revolution is the single biggest improvement.")
+                notes.append(String(localized: "Almost all frames are from the same height (\(elevationSpreadDegrees)° elevation spread). Cameras on a single ring give no vertical parallax, so top and bottom surfaces come out soft. Changing the phone's height/angle and shooting a second revolution is the single biggest improvement."))
             }
 
         case .interior:

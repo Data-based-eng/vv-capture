@@ -74,6 +74,26 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
     /// Continuations parked in `drainPendingCaptures()`, resumed when the last
     /// in-flight delegate reports back. Guarded by `pendingLock`.
     private var drainWaiters: [CheckedContinuation<Void, Never>] = []
+    /// Set only by `drainPendingCaptures()`'s timeout path, when the 15 s sleep
+    /// actually completes. Serves two purposes: (1) the timeout task resumes
+    /// the worker before returning, so `group.next()` may collect the worker's
+    /// `false` first — OR-ing this flag makes the timeout deterministic instead
+    /// of racy; (2) after this point no waiter may park — the timeout task has
+    /// already popped every waiter, so a continuation appended afterwards would
+    /// never be resumed and the task group would hang on scope exit. Guarded by
+    /// `pendingLock`.
+    private var drainTimedOut = false
+    /// Set once `finish()`'s drain has returned: a delegate that fires after
+    /// this point is a straggler past the drain cap, and its bytes must not
+    /// land on disk — otherwise the file exists with no yaw entry, or lands
+    /// after the reconstruction input was already enumerated. Guarded by
+    /// `pendingLock`.
+    private var discardLateCaptures = false
+
+    /// `AVCaptureSessionRuntimeError` observer token. Without it a mid-scan
+    /// session death (device lost, media services reset) is silent — the
+    /// engine's `onFailure` handler would stay dead code forever.
+    private var runtimeErrorObserver: NSObjectProtocol?
 
     private var shotIndex = 0
 
@@ -116,6 +136,31 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
         self.onShotRejected = onShotRejected
         self.onFailure = onFailure
         super.init()
+
+        // Session-level failures after configure() have no other reporting
+        // path. Delivered on an arbitrary thread; funneled to sessionQueue.
+        runtimeErrorObserver = NotificationCenter.default.addObserver(
+            forName: .AVCaptureSessionRuntimeError,
+            object: session,
+            queue: nil
+        ) { [weak self] notification in
+            guard let self else { return }
+            let message: String
+            if let error = notification.userInfo?[AVCaptureSessionErrorKey] as? Error {
+                message = error.localizedDescription
+            } else {
+                message = String(localized: "The camera session failed unexpectedly.")
+            }
+            self.sessionQueue.async { [weak self] in
+                self?.onFailure(message)
+            }
+        }
+    }
+
+    deinit {
+        if let runtimeErrorObserver {
+            NotificationCenter.default.removeObserver(runtimeErrorObserver)
+        }
     }
 
     // MARK: - Lifecycle
@@ -239,7 +284,10 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
     /// so it never blocks the queue the session needs.
     private func pollRunning(upTo seconds: TimeInterval) async -> Bool {
         let deadline = Date().addingTimeInterval(seconds)
-        while !session.isRunning, Date() < deadline {
+        // `Task.isCancelled` in the condition: once cancelled, `Task.sleep`
+        // returns immediately, and without this the loop would hot-spin until
+        // the deadline.
+        while !session.isRunning, !Task.isCancelled, Date() < deadline {
             try? await Task.sleep(for: .milliseconds(100))
         }
         return session.isRunning
@@ -247,7 +295,9 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
 
     func stop() {
         sessionQueue.async { [weak self] in
-            guard let self, self.session.isRunning else { return }
+            guard let self else { return }
+            self.retryPendingCleanup()
+            guard self.session.isRunning else { return }
             self.session.stopRunning()
         }
     }
@@ -300,6 +350,19 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
         }
     }
 
+    /// Called by the engine after `drainPendingCaptures()` returns: any
+    /// delegate still outstanding blew the 15 s cap, and its bytes must not
+    /// land on disk from here on.
+    func setDiscardLateCaptures() {
+        pendingLock.withLock { discardLateCaptures = true }
+    }
+
+    /// Thread-safe read of `discardLateCaptures` for the photo output's
+    /// callback queue (which must never touch `sessionQueue` state).
+    private func shouldDiscardLateCapture() -> Bool {
+        pendingLock.withLock { discardLateCaptures }
+    }
+
     /// Resolves once every in-flight capture has reported back.
     ///
     /// `finish()` waits on this before reconstructing: without it, a photo whose
@@ -312,12 +375,14 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
     /// are resumed at that point. Bounded — a delegate that never fires must
     /// not hang the finish path.
     func drainPendingCaptures() async {
+        // A fresh drain must not inherit a previous call's expiry.
+        pendingLock.withLock { drainTimedOut = false }
         let timedOut = await withTaskGroup(of: Bool.self) { group in
             group.addTask { [weak self] in
                 guard let self else { return false }
                 await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
                     self.pendingLock.withLock {
-                        if self.pendingCaptures.isEmpty {
+                        if self.pendingCaptures.isEmpty || self.drainTimedOut {
                             continuation.resume()
                         } else {
                             self.drainWaiters.append(continuation)
@@ -326,13 +391,45 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
                 }
                 return false
             }
-            group.addTask {
-                try? await Task.sleep(for: .seconds(15))
-                return true
+            group.addTask { [weak self] in
+                // `try?` would conflate cancellation with timeout; distinguish
+                // them so the error log below stays truthful. Either way the
+                // waiters MUST be unparked here, not just abandoned: the worker
+                // above is parked in a checked continuation that cancellation
+                // cannot resume, so without this the task group would wait on
+                // the worker forever and the 15 s bound would be a lie — and an
+                // externally cancelled drain would hang the group on scope
+                // exit. Each waiter is popped exactly once under pendingLock,
+                // so this can't double-resume one the delegate path took.
+                // Only a REAL timeout marks expiry (see `drainTimedOut`): on
+                // cancellation the worker already finished normally, so there
+                // is nothing parked and nothing to mark.
+                let didTimeOut: Bool
+                do {
+                    try await Task.sleep(for: .seconds(15))
+                    didTimeOut = true
+                } catch {
+                    didTimeOut = false
+                }
+                if let self {
+                    self.pendingLock.withLock {
+                        if didTimeOut { self.drainTimedOut = true }
+                    }
+                    let waiters: [CheckedContinuation<Void, Never>] = self.pendingLock.withLock {
+                        defer { self.drainWaiters.removeAll() }
+                        return self.drainWaiters
+                    }
+                    for waiter in waiters { waiter.resume() }
+                }
+                return didTimeOut
             }
             let first = await group.next() ?? true
             group.cancelAll()
-            return first
+            // `first` alone is racy: on a real timeout the worker is resumed
+            // by the unpark above and can return `false` before the timeout
+            // task's `true` reaches `group.next()`. The flag is set only by
+            // the timeout path, so OR-ing makes the timeout deterministic.
+            return first || pendingLock.withLock { drainTimedOut }
         }
         if timedOut {
             let stuck = pendingLock.withLock { pendingCaptures.count }
@@ -471,7 +568,11 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
         // touched on one thread. The delegate stays retained in
         // `pendingCaptures` until its terminal `didFinishCaptureFor` fires —
         // that is the signal the output's internal pipeline has drained.
-        let delegate = PhotoDelegate(destination: destination, takenAt: takenAt) { [weak self] result in
+        // If the coordinator is gone (cancel() tore the session down) the
+        // capture is definitionally late: its bytes must never land on disk.
+        let delegate = PhotoDelegate(destination: destination, takenAt: takenAt, shouldDiscard: { [weak self] in
+            self?.shouldDiscardLateCapture() ?? true
+        }) { [weak self] result in
             guard let self else { return }
             self.sessionQueue.async { [weak self] in
                 guard let self else { return }
@@ -494,12 +595,20 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
     }
 
     private func handle(result: Result<PhotoDelegate.Capture, Error>, index: Int, destination: URL) {
+        retryPendingCleanup()
         switch result {
         case .failure(let error):
+            // A capture discarded by PhotoDelegate resolved after the session
+            // moved on: its bytes were never written, so there is nothing to
+            // report — dropping it silently, not as a user-visible rejection.
+            if case ScanEngineError.cancelled = error {
+                Self.logger.debug("Discarding late capture #\(index, privacy: .public): session moved on before its delegate fired")
+                return
+            }
             // Per-frame failure: reported through the rejection channel, never
             // the session-level `onFailure`. One bad frame must not invalidate
             // the session or the captures still in flight.
-            onShotRejected("Couldn't save frame \(index): \(error.localizedDescription)")
+            onShotRejected(String(localized: "Couldn't save frame \(index): \(error.localizedDescription)"))
 
         case .success(let capture):
             guard let sharpness = capture.sharpness else {
@@ -524,10 +633,10 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
                 // reused number could be handed to two different shots and one file
                 // would overwrite the other. Gaps in the numbering are harmless.
                 consecutiveRejections += 1
-                let deleted = deleteRejectedFile(at: destination)
+                let cleanup = deleteRejectedFile(at: destination)
                 Self.logger.debug("Blurry frame dropped: \(sharpness, privacy: .public) / \(self.sharpnessReference, privacy: .public)")
                 var reason = String(localized: "Blurry frame skipped — rotate more slowly")
-                if !deleted {
+                if cleanup == .kept {
                     // The solver enumerates every non-dotfile in the images
                     // directory, so a leftover would be re-ingested. Say so
                     // loudly rather than silently shipping a soft frame.
@@ -541,21 +650,63 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
         }
     }
 
-    /// Removes a blur-rejected frame. Returns false if the file is still on
-    /// disk afterwards — the solver enumerates the images directory, so a
-    /// leftover would be re-ingested into the reconstruction.
-    private func deleteRejectedFile(at url: URL) -> Bool {
+    /// Outcome of removing a blur-rejected frame. The solver enumerates every
+    /// non-dotfile in the images directory, so only `.gone` and `.quarantined`
+    /// keep a rejected frame out of the reconstruction.
+    private enum RejectedFileCleanup {
+        case gone
+        case quarantined
+        case kept
+    }
+
+    /// Files a blur rejection couldn't remove — quarantine dotfiles whose
+    /// later deletion is still pending, and files where even quarantine
+    /// failed. Retried on subsequent capture results and at stop: transient
+    /// failures (spotlight/AV locks) often clear within seconds, and a
+    /// leftover would otherwise be committed to the user's library by the
+    /// engine. SessionQueue-confined.
+    private var pendingCleanup: [URL] = []
+
+    /// Removes a blur-rejected frame. If deletion fails, the file is renamed
+    /// with a dot prefix instead: the solver skips dotfiles, so a rejected
+    /// frame can't be re-ingested even though its bytes are still on disk.
+    private func deleteRejectedFile(at url: URL) -> RejectedFileCleanup {
         let path = url.path(percentEncoded: false)
         let fm = FileManager.default
-        guard fm.fileExists(atPath: path) else { return true }
+        guard fm.fileExists(atPath: path) else { return .gone }
         for _ in 0..<2 where fm.fileExists(atPath: path) {
             try? fm.removeItem(at: url)
         }
-        let gone = !fm.fileExists(atPath: path)
-        if !gone {
-            Self.logger.error("Couldn't delete rejected frame: \(url.lastPathComponent, privacy: .public)")
+        guard fm.fileExists(atPath: path) else { return .gone }
+        let quarantined = url.deletingLastPathComponent()
+            .appending(path: "." + url.lastPathComponent, directoryHint: .notDirectory)
+        if (try? fm.moveItem(at: url, to: quarantined)) != nil, !fm.fileExists(atPath: path) {
+            Self.logger.error("Couldn't delete rejected frame; quarantined as dotfile: \(quarantined.lastPathComponent, privacy: .public)")
+            pendingCleanup.append(quarantined)
+            return .quarantined
         }
-        return gone
+        Self.logger.error("Couldn't delete rejected frame: \(url.lastPathComponent, privacy: .public)")
+        pendingCleanup.append(url)
+        return .kept
+    }
+
+    /// Best-effort deletion of files left behind by failed cleanups. Called on
+    /// sessionQueue for every capture result and at stop; entries that still
+    /// won't delete stay listed for the next attempt.
+    private func retryPendingCleanup() {
+        guard !pendingCleanup.isEmpty else { return }
+        let fm = FileManager.default
+        let before = pendingCleanup.count
+        pendingCleanup.removeAll { url in
+            let path = url.path(percentEncoded: false)
+            guard fm.fileExists(atPath: path) else { return true }
+            try? fm.removeItem(at: url)
+            return !fm.fileExists(atPath: path)
+        }
+        let cleared = before - pendingCleanup.count
+        if cleared > 0 {
+            Self.logger.info("Cleaned up \(cleared, privacy: .public) previously quarantined frame(s)")
+        }
     }
 }
 
@@ -573,14 +724,19 @@ private final class PhotoDelegate: NSObject, AVCapturePhotoCaptureDelegate {
 
     private let destination: URL
     private let takenAt: Date
+    /// Checked on the photo output's callback queue before the file is
+    /// written: when true, the capture resolved after the session moved on
+    /// and its bytes must not land on disk.
+    private let shouldDiscard: @Sendable () -> Bool
     private let completion: @Sendable (Result<Capture, Error>) -> Void
     private let stateLock = NSLock()
     private var processingResult: Result<Capture, Error>?
     private var didComplete = false
 
-    init(destination: URL, takenAt: Date, completion: @escaping @Sendable (Result<Capture, Error>) -> Void) {
+    init(destination: URL, takenAt: Date, shouldDiscard: @escaping @Sendable () -> Bool, completion: @escaping @Sendable (Result<Capture, Error>) -> Void) {
         self.destination = destination
         self.takenAt = takenAt
+        self.shouldDiscard = shouldDiscard
         self.completion = completion
         super.init()
     }
@@ -591,7 +747,14 @@ private final class PhotoDelegate: NSObject, AVCapturePhotoCaptureDelegate {
         error: Error?
     ) {
         let result: Result<Capture, Error>
-        if let error {
+        if shouldDiscard() {
+            // The session moved on while this capture was in flight: finish()'s
+            // drain returned with this delegate still outstanding, or cancel()
+            // tore the session down. Writing now would orphan a file with no
+            // yaw entry — or land after the reconstruction input was already
+            // enumerated. The coordinator drops this silently (see handle).
+            result = .failure(ScanEngineError.cancelled)
+        } else if let error {
             // Per-callback error param — a failing frame, not a failing session.
             result = .failure(error)
         } else if let data = photo.fileDataRepresentation() {

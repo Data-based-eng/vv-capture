@@ -125,11 +125,29 @@ final class TurntableCaptureEngine: ScanEngine {
     private var autoCaptureTask: Task<Void, Never>?
     /// The detached video processing task, so `cancel()` can stop it mid-run.
     private var videoProcessTask: Task<VideoProcessResult, Error>?
+    /// The in-flight `finish()` task, so `cancel()` can abort it mid-run.
+    /// Without this, cancelling during reconstruction only set the flag and
+    /// let the solver burn CPU/GPU to completion; cancelling the task drives
+    /// the reconstructor's cancellation handler → `session.cancel()` →
+    /// `.processingCancelled`.
+    private var finishTask: Task<ScanRecord, Error>?
     /// Set by `cancel()`. `finish()` checks it at every await boundary so a
     /// cancel that lands mid-reconstruction produces `.cancelled` — never a
     /// `.failed` for a workspace that was deliberately discarded, and never a
     /// committed record for one.
     private var isCancelled = false
+    /// Reentrancy guard for `finish()`: a double-tapped Finish button would
+    /// otherwise reconstruct and commit twice.
+    private var isFinishing = false
+    /// Claimed synchronously at the top of `start()`, before the first await,
+    /// and released by `defer` on every exit. The coordinator/phase guard
+    /// below cannot see a *concurrent* start() parked at the permission await
+    /// (MainActor interleaving): without this, two rapid start() calls -- e.g.
+    /// a double-tap on a fresh install, where requestAccess actually suspends
+    /// -- would each build a session, orphaning the first camera session and
+    /// leaking its workspace. Deliberately NOT cleared by resetSessionState(),
+    /// which runs inside start() after the claim is taken.
+    private var isStarting = false
 
     init(storage: ScanStorage) {
         self.storage = storage
@@ -138,6 +156,28 @@ final class TurntableCaptureEngine: ScanEngine {
     // MARK: - ScanEngine
 
     func start() async throws {
+        // Claim the session before the first await (see isStarting): the
+        // guard below can't see a concurrent start() suspended at the
+        // permission prompt, so this synchronous check is the only thing
+        // stopping a double-tap from building two sessions.
+        guard !isStarting else {
+            throw ScanEngineError.sessionUnavailable(String(localized: "A capture session is already active."))
+        }
+        guard coordinator == nil, phase == .idle || phase.isTerminal else {
+            throw ScanEngineError.sessionUnavailable(String(localized: "A capture session is already active."))
+        }
+        isStarting = true
+        defer { isStarting = false }
+        // Clear a stale cancellation from a previous session *synchronously*,
+        // before the first await: a cancel() landing after this point (while
+        // start() is suspended at the permission/setup awaits) sets the flag,
+        // and the end-of-start check below must still see it. resetSessionState()
+        // deliberately does NOT touch isCancelled for this reason.
+        isCancelled = false
+        // The guard above already verified no live session: the new
+        // coordinator/workspace below safely take over the nil references.
+        // Reuse after a terminal phase is still allowed — teardown() nils
+        // the coordinator, so a retry after a failed start works.
         // C1: the camera permission prompt must fire before any session is
         // created. Without this, a fresh install starts a black preview and
         // every capture tap silently no-ops. The denial message surfaces in
@@ -203,7 +243,13 @@ final class TurntableCaptureEngine: ScanEngine {
         let video = VideoCaptureCoordinator(
             videoURL: workspace.videoURL,
             onFinishedRecording: { [weak self] url in
-                Task { @MainActor in self?.recordedVideoURL = url }
+                Task { @MainActor in
+                    // A take that finalises after cancel() is dead: its
+                    // workspace is discarded, so the URL must not resurrect
+                    // via canFinish().
+                    guard let self, !self.isCancelled else { return }
+                    self.recordedVideoURL = url
+                }
             },
             onFailure: { [weak self] message in
                 Task { @MainActor in self?.captureError = message }
@@ -218,12 +264,68 @@ final class TurntableCaptureEngine: ScanEngine {
         }
 
         phase = .capturing(shots: 0)
+
+        // A cancel that landed while the session was being prepared must not
+        // leave a live camera session behind: the permission / workspace /
+        // setup awaits above don't observe isCancelled. The flag was cleared
+        // synchronously at the top of start(), so a set flag here can only
+        // mean a cancel landed during this startup.
+        if isCancelled {
+            storage.discard(workspace)
+            self.workspace = nil
+            yawManifest = nil
+            teardown()
+            phase = .cancelled
+            throw ScanEngineError.cancelled
+        }
     }
 
     func finish() async throws -> ScanRecord {
         // finish() after cancel() must report cancellation, not "No active
         // session": cancel() may already have torn the session down.
         guard !isCancelled else { throw ScanEngineError.cancelled }
+        // A second finish() (double-tapped Finish button, or one racing
+        // teardown) must not reconstruct and commit twice: the phase doesn't
+        // leave .capturing until the video section below, so the phase guard
+        // alone can't see the first call still draining cameras.
+        guard !isFinishing else {
+            throw ScanEngineError.sessionUnavailable(String(localized: "The scan is already finishing."))
+        }
+        isFinishing = true
+        defer { isFinishing = false }
+
+        // Run the body as a tracked task so cancel() can abort it mid-flight
+        // (notably during reconstruction — see finishTask). A raw
+        // CancellationError surfacing here means cancel() won at a suspension
+        // point before finishImpl could translate it; report it as a
+        // cancellation either way.
+        let task = Task { try await self.finishImpl() }
+        finishTask = task
+        defer { finishTask = nil }
+        do {
+            return try await task.value
+        } catch {
+            // The inner task is unstructured: it does not inherit
+            // cancellation from this task. If our own task was cancelled
+            // (rather than via cancel(), which cancels finishTask
+            // explicitly), the inner task would otherwise keep running —
+            // reconstructing and even committing — after we report
+            // cancellation. Stop it explicitly; cancelling a finished task
+            // is a no-op.
+            task.cancel()
+            if error is CancellationError {
+                throw ScanEngineError.cancelled
+            }
+            throw error
+        }
+    }
+
+    private func finishImpl() async throws -> ScanRecord {
+        // A second finish() (or one racing teardown) is a programming error,
+        // not a cancellation — report it as such.
+        guard case .capturing = phase else {
+            throw ScanEngineError.sessionUnavailable(String(localized: "No active capture session."))
+        }
         guard let coordinator, let workspace else {
             throw ScanEngineError.sessionUnavailable(String(localized: "No active session."))
         }
@@ -258,6 +360,10 @@ final class TurntableCaptureEngine: ScanEngine {
         // reconstruction input was enumerated — or after teardown, with no yaw
         // entry at all. Wait for the in-flight captures first.
         await coordinator.drainPendingCaptures()
+        // The drain returned: any delegate still outstanding blew the 15 s
+        // cap. Its bytes must not land on disk from here on — no file without
+        // a yaw entry, and no yaw entry for a shot the solver never saw.
+        coordinator.setDiscardLateCaptures()
 
         // A cancel may have landed while draining, and a second finish must not
         // reconstruct twice.
@@ -330,6 +436,12 @@ final class TurntableCaptureEngine: ScanEngine {
         }
 
         guard shotCount + videoFrameCount > 0 else {
+            // Tear down explicitly: without this the coordinator stays
+            // assigned and a retry is blocked by start()'s coordinator == nil
+            // guard even though the phase is terminal.
+            storage.discard(workspace)
+            teardown()
+            self.workspace = nil
             phase = .failed(message: String(localized: "No photos were taken."))
             throw ScanEngineError.noImagesCaptured
         }
@@ -356,9 +468,18 @@ final class TurntableCaptureEngine: ScanEngine {
             if isCancelled {
                 storage.discard(workspace)
                 teardown()
+                self.workspace = nil
                 phase = .cancelled
                 throw ScanEngineError.cancelled
             }
+            // Like the video-processing and commit failures, a failed
+            // reconstruction must discard and tear down explicitly (M18):
+            // without it the coordinator stays assigned and the next
+            // start() is blocked by the coordinator == nil guard even
+            // though the phase is terminal.
+            storage.discard(workspace)
+            teardown()
+            self.workspace = nil
             phase = .failed(message: error.localizedDescription)
             throw error
         }
@@ -387,7 +508,18 @@ final class TurntableCaptureEngine: ScanEngine {
             detail: .reduced,
             summary: output.poses?.summaryText
         )
-        try storage.commit(record, workspace: workspace)
+        do {
+            try storage.commit(record, workspace: workspace)
+        } catch {
+            // A failed commit must not wedge the engine in .reconstructing
+            // with the workspace still on disk: nothing retries a one-shot
+            // engine, so discard explicitly (M18) and report failure.
+            storage.discard(workspace)
+            teardown()
+            self.workspace = nil
+            phase = .failed(message: error.localizedDescription)
+            throw error
+        }
 
         teardown()
         phase = .done(record)
@@ -400,6 +532,11 @@ final class TurntableCaptureEngine: ScanEngine {
         // workspace that finish() has already committed).
         guard !phase.isTerminal else { return }
         isCancelled = true
+        // Abort an in-flight finish(): without this, cancelling during
+        // reconstruction only set the flag above and let the solver burn
+        // CPU/GPU to completion. The reconstructor's task-cancellation
+        // handler turns this into session.cancel() → .processingCancelled.
+        finishTask?.cancel()
         stopAutoCapture()
         coordinator?.stop()
         if isRecordingVideo {
@@ -559,7 +696,16 @@ final class TurntableCaptureEngine: ScanEngine {
         autoCaptureTask = nil
         videoProcessTask?.cancel()
         videoProcessTask = nil
-        isCancelled = false
+        // A finish() left hanging (e.g. cancelled while blocked in video
+        // finalisation) must not survive into the next session: start()'s
+        // phase guard guarantees no legitimate finish() is in flight here.
+        finishTask?.cancel()
+        finishTask = nil
+        // isCancelled is NOT cleared here: start() clears it synchronously
+        // before the first await, and clearing it here would swallow a
+        // cancel() that landed while start() was suspended at the permission
+        // or setup awaits.
+        isFinishing = false
         isRecordingVideo = false
         recordedVideoURL = nil
         captureError = nil
@@ -573,6 +719,10 @@ final class TurntableCaptureEngine: ScanEngine {
     private func teardown() {
         stopAutoCapture()
         isRecordingVideo = false
+        // commit() deletes the video file, and cancel() discards the
+        // workspace: either way the URL dangles after this point, and a
+        // stale non-nil value would keep canFinish() true on a dead take.
+        recordedVideoURL = nil
         // Stop the stills session before dropping the coordinator: without
         // this the capture indicator can linger after a successful scan.
         coordinator?.stop()

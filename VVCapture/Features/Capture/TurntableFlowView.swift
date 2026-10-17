@@ -17,6 +17,11 @@ struct TurntableFlowView: View {
     /// Screen-space rectangle the user places over the object.
     @State private var maskFrame = CGRect(x: 80, y: 240, width: 220, height: 260)
 
+    /// The capture overlay's origin in window coordinates. The mask rect above
+    /// lives in overlay (safe-area-inset) space; it is shifted by this origin
+    /// into window space before `MaskCoordinateSpace` converts it.
+    @State private var overlayWindowOrigin = CGPoint.zero
+
     /// Called when the flow ends (done, cancelled, or failed to start) so the
     /// host can reset to a fresh capture session.
     var onFinished: () -> Void = {}
@@ -40,7 +45,15 @@ struct TurntableFlowView: View {
         }
         .preferredColorScheme(.dark)
         .task { await startIfNeeded() }
+        // M29: the screen stays awake for capture, video processing, and
+        // reconstruction — driven by phase, not by view appear/disappear, so a
+        // phase swap can't leave the timer in the wrong state.
+        .onChange(of: engine?.phase.keepsScreenAwake ?? false, initial: true) { _, keepAwake in
+            UIApplication.shared.isIdleTimerDisabled = keepAwake
+        }
         .onDisappear {
+            // Belt and braces: re-enable even if the phase never got there.
+            UIApplication.shared.isIdleTimerDisabled = false
             if finishedRecord == nil { engine?.cancel() }
         }
     }
@@ -94,7 +107,12 @@ struct TurntableFlowView: View {
                 // The frame is reported back through a binding rather than read from
                 // the view: converting layer coordinates to capture coordinates needs
                 // the preview layer, which only this wrapper owns.
-                CameraPreviewView(session: session, maskFrame: maskFrame) { normalized in
+                CameraPreviewView(
+                    session: session,
+                    // The drag rect lives in this overlay's safe-area-inset space;
+                    // shift it into window space for the conversion (M26).
+                    maskFrame: maskFrame.offsetBy(dx: overlayWindowOrigin.x, dy: overlayWindowOrigin.y)
+                ) { normalized in
                     engine.objectMaskRect = normalized
                 }
                 .ignoresSafeArea()
@@ -112,11 +130,18 @@ struct TurntableFlowView: View {
                 onFinished()
             }
         }
-        // M29: auto-lock used to kill multi-minute takes — the idle timer was
-        // only disabled for processing/reconstruction. Keep the screen awake
-        // for the whole capture stage, both flows.
-        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
-        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
+        // Measure the overlay's window origin so the mask rect can be shifted
+        // out of safe-area-inset space (M26). `.global` matches UIKit window
+        // coordinates on this full-screen iPhone app.
+        .background(
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: OverlayWindowOriginKey.self,
+                    value: proxy.frame(in: .global).origin
+                )
+            }
+        )
+        .onPreferenceChange(OverlayWindowOriginKey.self) { overlayWindowOrigin = $0 }
     }
 
     /// `start()` is `async throws`: it gates on
@@ -176,14 +201,14 @@ private struct TurntableSetupGuide: View {
                     .staggerIn(delay: 0.06)
 
                     requirement(
-                        "A plain background still helps",
+                        String(localized: "A plain background still helps"),
                         detail: String(localized: "The frame does the heavy lifting, but if its edges sit close to the object it helps to move the background back a little and use one continuous backdrop instead of loose paper."),
                         systemImage: "square.dashed"
                     )
                     .staggerIn(delay: 0.12)
 
                     requirement(
-                        "Keep the phone still",
+                        String(localized: "Keep the phone still"),
                         detail: String(localized: "Use a tripod or prop it up. Don't touch the phone during capture."),
                         systemImage: "iphone.gen3"
                     )
@@ -272,6 +297,18 @@ private struct TurntableSetupGuide: View {
 
 // MARK: - Preview layer
 
+/// The capture overlay's origin in window coordinates, measured at layout
+/// time. The draggable mask rect lives in the overlay's (safe-area-inset)
+/// space, but `MaskCoordinateSpace` needs window coordinates — the flow views
+/// shift the rect by this origin before converting. Defined once here; both
+/// capture flows share it.
+struct OverlayWindowOriginKey: PreferenceKey {
+    static var defaultValue: CGPoint { .zero }
+    static func reduce(value: inout CGPoint, nextValue: () -> CGPoint) {
+        value = nextValue()
+    }
+}
+
 /// Converts the on-screen mask rectangle into the normalized image space the
 /// mask pipeline (`MaskedSampleSequence` / `ObjectMaskBuilder`) stamps onto.
 ///
@@ -280,11 +317,12 @@ private struct TurntableSetupGuide: View {
 ///
 /// M26 — `metadataOutputRectConverted(fromLayerRect:)` takes coordinates in the
 /// *preview layer's* space, but the drag rect lives in the SwiftUI overlay's
-/// (window) space. The preview view ignores the safe area, so its layer starts
-/// above the overlay origin by the top inset; feeding window coordinates
-/// straight in shifted the mask by ~54–59pt. We convert through the window
-/// first (`view.convert(_:to: nil)` gives the view's frame in window coords;
-/// we offset the rect by its origin).
+/// space, which is inset by the safe area while the preview view ignores it.
+/// Feeding overlay coordinates straight in shifted the stamped mask up by the
+/// top inset (~59pt on the 15 Pro Max). The call site shifts the rect into
+/// window coordinates first (via the overlay's measured window origin, above);
+/// here we subtract the preview view's own window origin to land in layer
+/// space.
 ///
 /// C3 — that conversion returns a normalized rect on the *unrotated* image:
 /// sensor-native landscape, even in a portrait UI. The video buffers are
@@ -544,8 +582,8 @@ private struct TurntableOverlay: View {
                         PulsingDot()
                     }
                     Text(engine.isAutoCapturing
-                         ? "Auto-capture is on — keep rotating the object slowly"
-                         : "Rotate the object ~10° and shoot")
+                         ? String(localized: "Auto-capture is on — keep rotating the object slowly")
+                         : String(localized: "Rotate the object ~10° and shoot"))
                         .font(.footnote)
                         .foregroundStyle(Brand.textSecondary)
                         .multilineTextAlignment(.center)
@@ -568,7 +606,7 @@ private struct TurntableOverlay: View {
                 .buttonStyle(BrandSecondaryButton())
                 .disabled(engine.lockState == .locking || engine.lockState == .locked || engine.isRecordingVideo)
 
-                Button(engine.isAutoCapturing ? "Stop Auto" : "Auto Capture") {
+                Button(engine.isAutoCapturing ? String(localized: "Stop Auto") : String(localized: "Auto Capture")) {
                     engine.toggleAutoCapture()
                 }
                 .buttonStyle(BrandSecondaryButton())
@@ -646,8 +684,15 @@ private struct TurntableOverlay: View {
     }
 
     private func finish() {
+        // The button's .disabled(isFinishing) lags one render behind rapid
+        // taps: without this guard a second tap spawns a second finish()
+        // task, the engine's reentrancy guard throws sessionUnavailable, and
+        // the user gets a spurious "couldn't create the model" alert.
+        guard !isFinishing else { return }
         isFinishing = true
-        Task {
+        // @MainActor: isFinishing/finishError are @State, and the finish()
+        // continuation must land back on the main thread to touch them.
+        Task { @MainActor in
             defer { isFinishing = false }
             do {
                 _ = try await engine.finish()
@@ -718,8 +763,6 @@ struct TurntableReconstructionView: View {
             .staggerIn(delay: 0.05)
         }
         .animation(.easeInOut(duration: 0.3), value: progress.stage?.rawValue ?? -1)
-        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
-        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
     }
 }
 
@@ -755,8 +798,6 @@ struct TurntableVideoProcessingView: View {
             .staggerIn(delay: 0.05)
         }
         .animation(.easeInOut(duration: 0.3), value: progress.stage ?? "")
-        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
-        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
     }
 }
 
@@ -859,7 +900,7 @@ struct TurntableResultView: View {
             .depthPanel()
             .staggerIn(delay: 0.08)
 
-            ForEach(warnings, id: \.self) { warning in
+            ForEach(Array(warnings.enumerated()), id: \.offset) { _, warning in
                 Label(warning, systemImage: "lightbulb.fill")
                     .font(.caption)
                     .foregroundStyle(Brand.phosphorBright)

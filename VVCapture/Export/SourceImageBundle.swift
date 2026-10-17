@@ -30,6 +30,21 @@ enum SourceImageBundle {
         let contents = (try? fileManager.contentsOfDirectory(atPath: imagesDirectory.path(percentEncoded: false))) ?? []
         guard !contents.isEmpty else { throw BundleError.imagesMissing }
 
+        // Crash leftovers: the frame extractor encodes to `.part` siblings and
+        // moves them into place — a `.part` file still here is a truncated
+        // encode from a killed session. The reconstructor ignores them, but
+        // they don't belong in the Mac bundle.
+        let leftovers = contents.filter { $0.hasSuffix(".part") }
+        var dropped = 0
+        for name in leftovers {
+            if (try? fileManager.removeItem(at: imagesDirectory.appending(path: name, directoryHint: .notDirectory))) != nil {
+                dropped += 1
+            }
+        }
+        if dropped > 0 {
+            logger.info("Dropped \(dropped, privacy: .public) stale partial encodes from the bundle")
+        }
+
         let safeName = baseName
             .components(separatedBy: CharacterSet.alphanumerics.inverted)
             .filter { !$0.isEmpty }
@@ -41,7 +56,7 @@ enum SourceImageBundle {
             try zip(directory: imagesDirectory, to: destination)
         }.value
 
-        logger.info("Archive ready: \(contents.count, privacy: .public) images")
+        logger.info("Archive ready: \(contents.count - dropped, privacy: .public) images")
         return destination
     }
 
@@ -77,7 +92,7 @@ enum SourceImageBundle {
     static let macInstructions = """
         With the tool in this project:
 
-        swiftc -O -parse-as-library Tools/Reconstruct.swift -o /tmp/reconstruct
+        swiftc -O Tools/Reconstruct.swift -o /tmp/reconstruct
         /tmp/reconstruct ~/Downloads/frames ~/Desktop/model.usdz raw
 
         detail: macOS offers .medium / .full / .raw, iOS only .reduced.
