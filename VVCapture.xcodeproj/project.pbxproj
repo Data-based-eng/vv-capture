@@ -8,6 +8,175 @@
 
 /* Begin PBXFileReference section */
 		PRODUCTAPPREF /* VVCapture.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VVCapture.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		90F0BA1089C24562AD2A1AF2 /* DeviceCapabilities.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Core/DeviceCapabilities.swift;
+			sourceTree = "<group>";
+		};
+		6E81C4FF8AFD4B26BF5C4489 /* ReconstructionProgress.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Core/ReconstructionProgress.swift;
+			sourceTree = "<group>";
+		};
+		7D8BB116F94D4F079BA04EC0 /* ScanEngine.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Core/ScanEngine.swift;
+			sourceTree = "<group>";
+		};
+		B3A6A0145F7640A199980E46 /* ScanEngineKind.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Core/ScanEngineKind.swift;
+			sourceTree = "<group>";
+		};
+		3CF4C5F5ECAB4CF8ACD06CCC /* ScanRecord.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Core/ScanRecord.swift;
+			sourceTree = "<group>";
+		};
+		5B5926019FE74FB8B9DC2E2E /* ScanStorage.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Core/ScanStorage.swift;
+			sourceTree = "<group>";
+		};
+		0BAE752A5682439981166D23 /* PhotogrammetryReconstructor.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Engines/Photogrammetry/PhotogrammetryReconstructor.swift;
+			sourceTree = "<group>";
+		};
+		0C087E87BD5648FD83BF860C /* PoseDiagnostics.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Engines/Photogrammetry/PoseDiagnostics.swift;
+			sourceTree = "<group>";
+		};
+		A8F47DD4F2F1463FA4B40F16 /* MaskedSampleSequence.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Engines/Turntable/MaskedSampleSequence.swift;
+			sourceTree = "<group>";
+		};
+		BA30BE77362D46AFB90785C2 /* ObjectMaskBuilder.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Engines/Turntable/ObjectMaskBuilder.swift;
+			sourceTree = "<group>";
+		};
+		FB46DE0BBF9E47DDBE358B51 /* SharpnessMeter.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Engines/Turntable/SharpnessMeter.swift;
+			sourceTree = "<group>";
+		};
+		1814AA8CFB3A468FB531D595 /* VideoFrameExtractor.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Engines/Turntable/VideoFrameExtractor.swift;
+			sourceTree = "<group>";
+		};
+		90B86CA36FE946B9A53FE17E /* VideoYawEstimator.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Engines/Turntable/VideoYawEstimator.swift;
+			sourceTree = "<group>";
+		};
+		B5E45053122B42BC9961743D /* YawManifest.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Engines/Turntable/YawManifest.swift;
+			sourceTree = "<group>";
+		};
+		8CD67E21EC434A1C9ED015AD /* MeshExporter.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Export/MeshExporter.swift;
+			sourceTree = "<group>";
+		};
+		1DAC5461CBAB4C75B6E2EBD3 /* SourceImageBundle.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Export/SourceImageBundle.swift;
+			sourceTree = "<group>";
+		};
+		ED5283AFC5D04AADA9BF6C49 /* ModelPreviewView.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Features/Preview/ModelPreviewView.swift;
+			sourceTree = "<group>";
+		};
+		B252A7B92559481A966D6CC5 /* BrandTheme.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = VVCapture/Features/Theme/BrandTheme.swift;
+			sourceTree = "<group>";
+		};
+		8456E7724E00472FBF0D7881 /* MacImportEngine.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = Mac/MacImportEngine.swift;
+			sourceTree = "<group>";
+		};
+		8305B61663A24284A178DDC4 /* MacImportView.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = Mac/MacImportView.swift;
+			sourceTree = "<group>";
+		};
+		0311CB61EBFE422DA7AAC77A /* VVCaptureMacApp.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = Mac/VVCaptureMacApp.swift;
+			sourceTree = "<group>";
+		};
+		1D7775735ADA404088C54584 /* Assets.xcassets */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = folder.assetcatalog;
+			path = VVCapture/Assets.xcassets;
+			sourceTree = "<group>";
+		};
+		CF75DF2519884ED8BB017B4C /* IBMPlexMono-Bold.ttf */ = {
+			isa = PBXFileReference;
+			path = VVCapture/Fonts/IBMPlexMono-Bold.ttf;
+			sourceTree = "<group>";
+		};
+		4C8A2AEB79E84F74BA6D4236 /* IBMPlexMono-Medium.ttf */ = {
+			isa = PBXFileReference;
+			path = VVCapture/Fonts/IBMPlexMono-Medium.ttf;
+			sourceTree = "<group>";
+		};
+		03CAF24DA4954F1F9B19AEC9 /* IBMPlexMono-Regular.ttf */ = {
+			isa = PBXFileReference;
+			path = VVCapture/Fonts/IBMPlexMono-Regular.ttf;
+			sourceTree = "<group>";
+		};
+		310A47E44F3840FBBF5EF684 /* IBMPlexMono-SemiBold.ttf */ = {
+			isa = PBXFileReference;
+			path = VVCapture/Fonts/IBMPlexMono-SemiBold.ttf;
+			sourceTree = "<group>";
+		};
+		85D7DD6CAFD24C4ABE160C44 /* InfoPlist.xcstrings */ = {
+			isa = PBXFileReference;
+			path = VVCapture/InfoPlist.xcstrings;
+			sourceTree = "<group>";
+		};
+		EB60BE8E3F154CECADC69D8E /* Localizable.xcstrings */ = {
+			isa = PBXFileReference;
+			path = VVCapture/Localizable.xcstrings;
+			sourceTree = "<group>";
+		};
+		6DAF59CB5F27440C97AD0F1E /* VVCaptureMac.app */ = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.application;
+			includeInIndex = 0;
+			path = VVCaptureMac.app;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -20,6 +189,13 @@
 
 /* Begin PBXFrameworksBuildPhase section */
 		FRAMEWORKSPHASE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		11C81EA77E164C75851FFA7A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -41,6 +217,7 @@
 			isa = PBXGroup;
 			children = (
 				PRODUCTAPPREF /* VVCapture.app */,
+							6DAF59CB5F27440C97AD0F1E /* VVCaptureMac.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +247,25 @@
 			productReference = PRODUCTAPPREF /* VVCapture.app */;
 			productType = "com.apple.product-type.application";
 		};
+		DEE24E9F0A79458D846B4329 /* VVCaptureMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1E53999105EF4CCB8309D6AA /* Build configuration list for PBXNativeTarget "VVCaptureMac" */;
+			buildPhases = (
+				FA04AB162BCA40EFA835A574 /* Sources */,
+				11C81EA77E164C75851FFA7A /* Frameworks */,
+				F29A79D31F914E079F636569 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VVCaptureMac;
+			packageProductDependencies = (
+			);
+			productName = VVCaptureMac;
+			productReference = 6DAF59CB5F27440C97AD0F1E /* VVCaptureMac.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -81,6 +277,9 @@
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
 					APPTARGET = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					DEE24E9F0A79458D846B4329 = {
 						CreatedOnToolsVersion = 26.6;
 					};
 				};
@@ -101,8 +300,125 @@
 			projectRoot = "";
 			targets = (
 				APPTARGET /* VVCapture */,
+				DEE24E9F0A79458D846B4329 /* VVCaptureMac */,
 			);
 		};
+
+/* Begin PBXBuildFile section */
+		C9942C1F9690437BABB9BB75 /* DeviceCapabilities.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 90F0BA1089C24562AD2A1AF2 /* DeviceCapabilities.swift */;
+		};
+		27EAE4B464A145098EA93F0D /* ReconstructionProgress.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 6E81C4FF8AFD4B26BF5C4489 /* ReconstructionProgress.swift */;
+		};
+		937D0194DE984D83BB1DF56C /* ScanEngine.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 7D8BB116F94D4F079BA04EC0 /* ScanEngine.swift */;
+		};
+		ACEB6BC24BD74C338272DE4B /* ScanEngineKind.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = B3A6A0145F7640A199980E46 /* ScanEngineKind.swift */;
+		};
+		C493F72A3131493BBB80525E /* ScanRecord.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 3CF4C5F5ECAB4CF8ACD06CCC /* ScanRecord.swift */;
+		};
+		D4EB247EE89C48B3813112BD /* ScanStorage.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 5B5926019FE74FB8B9DC2E2E /* ScanStorage.swift */;
+		};
+		3EEC30D0D0F44DB6A26EB356 /* PhotogrammetryReconstructor.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 0BAE752A5682439981166D23 /* PhotogrammetryReconstructor.swift */;
+		};
+		7FD0B9F00285470C8038835C /* PoseDiagnostics.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 0C087E87BD5648FD83BF860C /* PoseDiagnostics.swift */;
+		};
+		6235E1EABB084D67837CA3C6 /* MaskedSampleSequence.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = A8F47DD4F2F1463FA4B40F16 /* MaskedSampleSequence.swift */;
+		};
+		AEA3E3B1FC874BF4B3725F63 /* ObjectMaskBuilder.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = BA30BE77362D46AFB90785C2 /* ObjectMaskBuilder.swift */;
+		};
+		CCF9FAE2413A47EDB98AFE48 /* SharpnessMeter.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = FB46DE0BBF9E47DDBE358B51 /* SharpnessMeter.swift */;
+		};
+		411290706C6543D69758ACBC /* VideoFrameExtractor.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 1814AA8CFB3A468FB531D595 /* VideoFrameExtractor.swift */;
+		};
+		E4523B913B174A4EA306F014 /* VideoYawEstimator.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 90B86CA36FE946B9A53FE17E /* VideoYawEstimator.swift */;
+		};
+		80D42741DBB14F13940094FD /* YawManifest.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = B5E45053122B42BC9961743D /* YawManifest.swift */;
+		};
+		5795A726EC1149078884B5C8 /* MeshExporter.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 8CD67E21EC434A1C9ED015AD /* MeshExporter.swift */;
+		};
+		B8F0A29329BE4344BC1F5E94 /* SourceImageBundle.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 1DAC5461CBAB4C75B6E2EBD3 /* SourceImageBundle.swift */;
+		};
+		A1F402C0DE674031B3F9F769 /* ModelPreviewView.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = ED5283AFC5D04AADA9BF6C49 /* ModelPreviewView.swift */;
+		};
+		426A0EBC8ACE43AEAB984F04 /* BrandTheme.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = B252A7B92559481A966D6CC5 /* BrandTheme.swift */;
+		};
+		AF8321EF0FB14BCEB31C9D95 /* MacImportEngine.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 8456E7724E00472FBF0D7881 /* MacImportEngine.swift */;
+		};
+		27AE9CF4CCC94ED4B7B4390E /* MacImportView.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 8305B61663A24284A178DDC4 /* MacImportView.swift */;
+		};
+		CDF124CB4EA9430D8D639754 /* VVCaptureMacApp.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 0311CB61EBFE422DA7AAC77A /* VVCaptureMacApp.swift */;
+		};
+		9D4D3702A2C44FE0AE1658A6 /* Assets.xcassets in Resources */ = {
+			isa = PBXBuildFile;
+			fileRef = 1D7775735ADA404088C54584 /* Assets.xcassets */;
+		};
+		41CBB4C8C2374BB2956F15F9 /* IBMPlexMono-Bold.ttf in Resources */ = {
+			isa = PBXBuildFile;
+			fileRef = CF75DF2519884ED8BB017B4C /* IBMPlexMono-Bold.ttf */;
+		};
+		28FEB390CFDF44F984AA71FA /* IBMPlexMono-Medium.ttf in Resources */ = {
+			isa = PBXBuildFile;
+			fileRef = 4C8A2AEB79E84F74BA6D4236 /* IBMPlexMono-Medium.ttf */;
+		};
+		9BC7CE31502148A392006D26 /* IBMPlexMono-Regular.ttf in Resources */ = {
+			isa = PBXBuildFile;
+			fileRef = 03CAF24DA4954F1F9B19AEC9 /* IBMPlexMono-Regular.ttf */;
+		};
+		8CDDFC0755E5489F8099B4D0 /* IBMPlexMono-SemiBold.ttf in Resources */ = {
+			isa = PBXBuildFile;
+			fileRef = 310A47E44F3840FBBF5EF684 /* IBMPlexMono-SemiBold.ttf */;
+		};
+		E16AFEF4B6674961914935A9 /* InfoPlist.xcstrings in Resources */ = {
+			isa = PBXBuildFile;
+			fileRef = 85D7DD6CAFD24C4ABE160C44 /* InfoPlist.xcstrings */;
+		};
+		71174A1377D84D0597A6581F /* Localizable.xcstrings in Resources */ = {
+			isa = PBXBuildFile;
+			fileRef = EB60BE8E3F154CECADC69D8E /* Localizable.xcstrings */;
+		};
+/* End PBXBuildFile section */
+
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
@@ -113,6 +429,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F29A79D31F914E079F636569 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9D4D3702A2C44FE0AE1658A6,
+				41CBB4C8C2374BB2956F15F9,
+				28FEB390CFDF44F984AA71FA,
+				9BC7CE31502148A392006D26,
+				8CDDFC0755E5489F8099B4D0,
+				E16AFEF4B6674961914935A9,
+				71174A1377D84D0597A6581F,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -120,6 +450,34 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA04AB162BCA40EFA835A574 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C9942C1F9690437BABB9BB75,
+				27EAE4B464A145098EA93F0D,
+				937D0194DE984D83BB1DF56C,
+				ACEB6BC24BD74C338272DE4B,
+				C493F72A3131493BBB80525E,
+				D4EB247EE89C48B3813112BD,
+				3EEC30D0D0F44DB6A26EB356,
+				7FD0B9F00285470C8038835C,
+				6235E1EABB084D67837CA3C6,
+				AEA3E3B1FC874BF4B3725F63,
+				CCF9FAE2413A47EDB98AFE48,
+				411290706C6543D69758ACBC,
+				E4523B913B174A4EA306F014,
+				80D42741DBB14F13940094FD,
+				5795A726EC1149078884B5C8,
+				B8F0A29329BE4344BC1F5E94,
+				A1F402C0DE674031B3F9F769,
+				426A0EBC8ACE43AEAB984F04,
+				AF8321EF0FB14BCEB31C9D95,
+				27AE9CF4CCC94ED4B7B4390E,
+				CDF124CB4EA9430D8D639754,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -263,6 +621,60 @@
 			};
 			name = Release;
 		};
+		2EA7B8BBAF154B05B1D0A677 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SDKROOT = macosx;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				SUPPORTED_PLATFORMS = macosx;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconMac;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = F567VF9J9R;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "VV Capture";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.visionvend.capture.mac;
+				PRODUCT_NAME = "VV Capture";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		BE84C268B75744AC96A835F7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SDKROOT = macosx;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				SUPPORTED_PLATFORMS = macosx;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconMac;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = F567VF9J9R;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "VV Capture";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.visionvend.capture.mac;
+				PRODUCT_NAME = "VV Capture";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -280,6 +692,15 @@
 			buildConfigurations = (
 				TGTDEBUG /* Debug */,
 				TGTRELEASE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1E53999105EF4CCB8309D6AA /* Build configuration list for PBXNativeTarget "VVCaptureMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2EA7B8BBAF154B05B1D0A677 /* Debug */,
+				BE84C268B75744AC96A835F7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

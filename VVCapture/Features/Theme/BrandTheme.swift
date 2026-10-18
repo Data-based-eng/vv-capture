@@ -62,6 +62,7 @@ enum Brand {
     }
 }
 
+#if os(iOS)
 private extension UIColor {
     convenience init(hex: UInt32) {
         self.init(
@@ -72,6 +73,7 @@ private extension UIColor {
         )
     }
 }
+#endif
 
 #if os(macOS)
 private extension NSColor {
@@ -440,7 +442,11 @@ struct TiltParallax: ViewModifier {
 
 extension View {
     func tiltParallax(magnitude: CGFloat = 7) -> some View {
+#if os(iOS)
         modifier(TiltParallax(magnitude: magnitude))
+#else
+        self
+#endif
     }
 }
 

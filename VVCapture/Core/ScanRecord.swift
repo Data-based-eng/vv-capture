@@ -66,22 +66,33 @@ struct ScanRecord: Identifiable, Codable, Hashable, Sendable {
 
 /// Mesh density the model was reconstructed at.
 ///
-/// Only one case, and that is a platform limit rather than a design choice:
 /// `PhotogrammetrySession.Request.Detail` declares `medium`, `full` and `raw`
 /// **only on macOS**. The iOS SDK exposes `reduced` alone, so on-device
-/// reconstruction cannot produce a high-poly mesh at any setting.
+/// reconstruction cannot produce a high-poly mesh at any setting — the Mac
+/// target adds the higher levels, which is the entire reason it exists.
 ///
 /// The path to full detail is to move the captured stills to a Mac — hence
 /// `SourceImageBundle`, and hence keeping the images after reconstruction.
 enum ReconstructionDetail: String, Codable, CaseIterable, Sendable, Identifiable {
     /// The only level iOS offers for on-device photogrammetry.
     case reduced
+#if os(macOS)
+    /// Higher polygon counts, offered by PhotogrammetrySession on macOS only.
+    case medium
+    case full
+    case raw
+#endif
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
         case .reduced: String(localized: "On-device (reduced)")
+#if os(macOS)
+        case .medium: String(localized: "Medium")
+        case .full: String(localized: "Full")
+        case .raw: String(localized: "Raw (undecimated)")
+#endif
         }
     }
 
@@ -89,6 +100,14 @@ enum ReconstructionDetail: String, Codable, CaseIterable, Sendable, Identifiable
         switch self {
         case .reduced:
             String(localized: "The only level iOS supports for on-device photogrammetry. Transfer the source images to a Mac for higher polygon counts.")
+#if os(macOS)
+        case .medium:
+            String(localized: "Higher polygon count than reduced. A good balance of detail and speed.")
+        case .full:
+            String(localized: "Full-resolution mesh. Slow — best on Apple silicon.")
+        case .raw:
+            String(localized: "Undecimated raw mesh. Very slow and very large — for inspection, not sharing.")
+#endif
         }
     }
 }

@@ -1,11 +1,17 @@
-import QuickLook
 import SwiftUI
+#if os(iOS)
+import QuickLook
+#else
+import AppKit
+import QuickLookUI
+#endif
 
 /// USDZ preview via Quick Look.
 ///
 /// Quick Look is used rather than a hand-rolled RealityKit scene because it
 /// already ships orbit/pinch gestures, AR placement, and correct lighting for
 /// USDZ — none of which is the interesting part of this app.
+#if os(iOS)
 struct ModelPreviewView: UIViewControllerRepresentable {
     let url: URL
 
@@ -35,3 +41,20 @@ struct ModelPreviewView: UIViewControllerRepresentable {
         }
     }
 }
+#else
+/// macOS variant: QLPreviewView embedded via NSViewRepresentable.
+struct ModelPreviewView: NSViewRepresentable {
+    let url: URL
+
+    func makeNSView(context: Context) -> QLPreviewView {
+        let view = QLPreviewView(frame: .zero, style: .normal)!
+        view.previewItem = url as NSURL
+        return view
+    }
+
+    func updateNSView(_ view: QLPreviewView, context: Context) {
+        guard (view.previewItem as? URL) != url else { return }
+        view.previewItem = url as NSURL
+    }
+}
+#endif

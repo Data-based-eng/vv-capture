@@ -298,6 +298,11 @@ private extension ReconstructionDetail {
     var apiDetail: PhotogrammetrySession.Request.Detail {
         switch self {
         case .reduced: .reduced
+#if os(macOS)
+        case .medium: .medium
+        case .full: .full
+        case .raw: .raw
+#endif
         }
     }
 }

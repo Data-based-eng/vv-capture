@@ -10,6 +10,10 @@ enum ScanEngineKind: String, Codable, CaseIterable, Sendable, Identifiable {
     case turntable
     /// Photogrammetry with the object fixed and the device orbited around it.
     case orbit
+#if os(macOS)
+    /// macOS folder/video import: no camera — stills in, high-detail mesh out.
+    case macImport
+#endif
 
     var id: String { rawValue }
 
@@ -17,6 +21,9 @@ enum ScanEngineKind: String, Codable, CaseIterable, Sendable, Identifiable {
         switch self {
         case .turntable: String(localized: "Turntable")
         case .orbit: String(localized: "Phone orbit")
+#if os(macOS)
+        case .macImport: String(localized: "Mac import")
+#endif
         }
     }
 
@@ -24,6 +31,9 @@ enum ScanEngineKind: String, Codable, CaseIterable, Sendable, Identifiable {
         switch self {
         case .turntable: String(localized: "Product spins, phone stays put.")
         case .orbit: String(localized: "Product stays put, walk around it.")
+#if os(macOS)
+        case .macImport: String(localized: "Folder or video in, high-detail mesh out.")
+#endif
         }
     }
 }
