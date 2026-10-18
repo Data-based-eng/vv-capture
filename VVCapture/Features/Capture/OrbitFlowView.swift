@@ -26,7 +26,7 @@ struct OrbitFlowView: View {
 
     var body: some View {
         ZStack {
-            Brand.ink.ignoresSafeArea()
+            Brand.bg.ignoresSafeArea()
 
             if let engine {
                 content(for: engine)
@@ -35,13 +35,12 @@ struct OrbitFlowView: View {
                     title: String(localized: "Couldn't open the camera"),
                     message: startupError,
                     systemImage: "exclamationmark.triangle.fill",
-                    tint: Brand.danger
+                    tint: Brand.signal
                 ) { onFinished() }
             } else {
-                ProgressView("Preparing…").tint(Brand.phosphor)
+                ProgressView("Preparing…").font(BrandFont.mono(14)).tint(Brand.accent)
             }
         }
-        .preferredColorScheme(.dark)
         .task { await startIfNeeded() }
         // M29: the screen stays awake for capture, video processing, and
         // reconstruction — driven by phase, not by view appear/disappear, so a
@@ -60,7 +59,7 @@ struct OrbitFlowView: View {
     private func content(for engine: OrbitCaptureEngine) -> some View {
         switch engine.phase {
         case .idle, .preparing:
-            ProgressView("Preparing camera…").tint(Brand.phosphor)
+            ProgressView("Preparing camera…").font(BrandFont.mono(14)).tint(Brand.accent)
 
         case .capturing:
             captureStage(engine: engine)
@@ -80,7 +79,7 @@ struct OrbitFlowView: View {
                 title: String(localized: "Scan failed"),
                 message: message,
                 systemImage: "exclamationmark.triangle.fill",
-                tint: Brand.danger
+                tint: Brand.signal
             ) { onFinished() }
 
         case .cancelled:
@@ -102,8 +101,7 @@ struct OrbitFlowView: View {
                 .ignoresSafeArea()
             }
 
-            VignetteOverlay()
-            GrainOverlay(opacity: 0.035)
+            ScanlineOverlay()
 
             ObjectMaskRectangle(frame: $maskFrame)
 
@@ -169,11 +167,11 @@ private struct OrbitOverlay: View {
             Spacer(minLength: 0)
             if let error = engine.captureError {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.white)
+                    .font(BrandFont.mono(12, weight: .medium))
+                    .foregroundStyle(Brand.onAccent)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Brand.danger.opacity(0.92), in: Capsule())
+                    .background(Brand.signal.opacity(0.92), in: Rectangle())
                     .padding(.bottom, 10)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -210,10 +208,10 @@ private struct OrbitOverlay: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 15, weight: .bold))
                     .frame(width: 36, height: 36)
-                    .background(Brand.panel.opacity(0.85), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Brand.surface.opacity(0.85), in: Rectangle())
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(Brand.panelEdge, lineWidth: 1)
+                        Rectangle()
+                            .stroke(Brand.line, lineWidth: 1)
                     )
             }
             .accessibilityLabel(String(localized: "Cancel scan"))
@@ -221,15 +219,15 @@ private struct OrbitOverlay: View {
             if engine.isRecordingVideo {
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(Brand.danger)
+                        .fill(Brand.signal)
                         .frame(width: 8, height: 8)
                     Text("REC")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(Brand.danger)
+                        .font(BrandFont.mono(12, weight: .bold))
+                        .foregroundStyle(Brand.signal)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(Brand.panel.opacity(0.85), in: Capsule())
+                .background(Brand.surface.opacity(0.85))
             }
         }
     }
@@ -237,8 +235,8 @@ private struct OrbitOverlay: View {
     private var actionBar: some View {
         VStack(spacing: 12) {
             Text(guidanceText)
-                .font(.footnote)
-                .foregroundStyle(Brand.textSecondary)
+                .font(BrandFont.mono(13))
+                .foregroundStyle(Brand.muted)
                 .multilineTextAlignment(.center)
 
             HStack(spacing: 12) {
@@ -247,7 +245,7 @@ private struct OrbitOverlay: View {
                 } label: {
                     Image(systemName: engine.isRecordingVideo ? "stop.fill" : "video.fill")
                         .font(.title3)
-                        .foregroundStyle(engine.isRecordingVideo ? Brand.danger : Brand.textPrimary)
+                        .foregroundStyle(engine.isRecordingVideo ? Brand.signal : Brand.text)
                         .frame(width: 56, height: 48)
                         .accessibilityLabel(engine.isRecordingVideo
                             ? String(localized: "Stop recording video")
@@ -260,7 +258,7 @@ private struct OrbitOverlay: View {
                 finish()
             } label: {
                 if isFinishing {
-                    ProgressView().tint(.black)
+                    ProgressView().tint(Brand.onAccent)
                 } else {
                     Text("Finish and Build Model")
                 }
@@ -270,14 +268,14 @@ private struct OrbitOverlay: View {
 
             if !engine.canFinish {
                 Text("Record a video of the product first.")
-                    .font(.caption2)
-                    .foregroundStyle(Brand.textTertiary)
+                    .font(BrandFont.mono(11))
+                    .foregroundStyle(Brand.muted)
                     .multilineTextAlignment(.center)
             }
         }
         .frame(maxWidth: .infinity)
         .padding(16)
-        .depthPanel(cornerRadius: 18)
+        .brandPanel()
         .tiltParallax(magnitude: 5)
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }

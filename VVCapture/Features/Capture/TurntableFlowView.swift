@@ -28,7 +28,7 @@ struct TurntableFlowView: View {
 
     var body: some View {
         ZStack {
-            Brand.ink.ignoresSafeArea()
+            Brand.bg.ignoresSafeArea()
 
             if let engine {
                 content(for: engine)
@@ -37,13 +37,12 @@ struct TurntableFlowView: View {
                     title: String(localized: "Couldn't open the camera"),
                     message: startupError,
                     systemImage: "exclamationmark.triangle.fill",
-                    tint: Brand.danger
+                    tint: Brand.signal
                 ) { onFinished() }
             } else {
-                ProgressView("Preparing…").tint(Brand.phosphor)
+                ProgressView("Preparing…").font(BrandFont.mono(14)).tint(Brand.accent)
             }
         }
-        .preferredColorScheme(.dark)
         .task { await startIfNeeded() }
         // M29: the screen stays awake for capture, video processing, and
         // reconstruction — driven by phase, not by view appear/disappear, so a
@@ -62,7 +61,7 @@ struct TurntableFlowView: View {
     private func content(for engine: TurntableCaptureEngine) -> some View {
         switch engine.phase {
         case .idle, .preparing:
-            ProgressView("Preparing camera…").tint(Brand.phosphor)
+            ProgressView("Preparing camera…").font(BrandFont.mono(14)).tint(Brand.accent)
 
         case .capturing:
             if hasSeenSetupTips {
@@ -93,7 +92,7 @@ struct TurntableFlowView: View {
                 title: String(localized: "Scan failed"),
                 message: message,
                 systemImage: "exclamationmark.triangle.fill",
-                tint: Brand.danger
+                tint: Brand.signal
             ) { onFinished() }
 
         case .cancelled:
@@ -120,8 +119,7 @@ struct TurntableFlowView: View {
 
             // Texture sits over the live preview but under the controls, so the
             // panels keep their contrast.
-            VignetteOverlay()
-            GrainOverlay(opacity: 0.035)
+            ScanlineOverlay()
 
             ObjectMaskRectangle(frame: $maskFrame)
 
@@ -169,22 +167,16 @@ private struct TurntableSetupGuide: View {
 
     var body: some View {
         ZStack {
-            Brand.ink.ignoresSafeArea()
+            Brand.bg.ignoresSafeArea()
             RuneWatermark()
                 .frame(width: 320, height: 320)
                 .offset(x: 110, y: -180)
-            GrainOverlay()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Turntable setup")
-                            .font(.title2.bold())
-                            .foregroundStyle(Brand.textPrimary)
-                        Rectangle()
-                            .fill(Brand.phosphor)
-                            .frame(width: 44, height: 3)
-                            .phosphorGlow(radius: 8, opacity: 0.6)
+                    VStack(alignment: .leading, spacing: 8) {
+                        BrandHeading(text: "Turntable setup")
+                        AccentTopRule()
                     }
                     .staggerIn(delay: 0)
 
@@ -248,8 +240,8 @@ private struct TurntableSetupGuide: View {
                             "This device can't embed depth in photos — the model won't be true to scale.",
                             systemImage: "ruler"
                         )
-                        .font(.footnote)
-                        .foregroundStyle(Brand.danger)
+                        .font(BrandFont.mono(13))
+                        .foregroundStyle(Brand.signal)
                         .staggerIn(delay: 0.42)
                     }
 
@@ -259,8 +251,9 @@ private struct TurntableSetupGuide: View {
                         .staggerIn(delay: 0.48)
 
                     Button("Cancel", action: onCancel)
-                        .font(.footnote)
-                        .foregroundStyle(Brand.textTertiary)
+                        .font(BrandFont.mono(13, weight: .medium))
+                        .textCase(.uppercase)
+                        .foregroundStyle(Brand.muted)
                         .frame(maxWidth: .infinity)
                         .staggerIn(delay: 0.54)
                 }
@@ -277,18 +270,18 @@ private struct TurntableSetupGuide: View {
     ) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: systemImage)
-                .font(.title3)
+                .font(.system(size: 20, weight: .semibold))
                 .frame(width: 26)
-                .foregroundStyle(isCritical ? Brand.phosphor : Brand.textSecondary)
-                .phosphorGlow(radius: 6, opacity: isCritical ? 0.5 : 0)
+                .foregroundStyle(isCritical ? Brand.accent : Brand.muted)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(isCritical ? Brand.phosphorBright : Brand.textPrimary)
+                    .font(BrandFont.mono(15, weight: .semibold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(isCritical ? Brand.accent : Brand.text)
                 Text(detail)
-                    .font(.footnote)
-                    .foregroundStyle(Brand.textSecondary)
+                    .font(BrandFont.mono(13))
+                    .foregroundStyle(Brand.muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -447,22 +440,22 @@ private struct TurntableOverlay: View {
             Spacer(minLength: 0)
             if let reason = engine.lastRejectionReason, engine.rejectedShots > 0 {
                 Label(reason, systemImage: "camera.metering.none")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.black)
+                    .font(BrandFont.mono(12, weight: .medium))
+                    .textCase(.uppercase)
+                    .foregroundStyle(Brand.onAccent)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Brand.phosphor, in: Capsule())
-                    .phosphorGlow(radius: 8, opacity: 0.4)
+                    .background(Brand.accent)
                     .padding(.bottom, 8)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
             if let error = engine.captureError {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.white)
+                    .font(BrandFont.mono(12, weight: .medium))
+                    .foregroundStyle(Brand.onAccent)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Brand.danger.opacity(0.92), in: Capsule())
+                    .background(Brand.signal.opacity(0.92), in: Rectangle())
                     .padding(.bottom, 10)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -504,21 +497,21 @@ private struct TurntableOverlay: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 15, weight: .bold))
                     .frame(width: 36, height: 36)
-                    .background(Brand.panel.opacity(0.85), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Brand.surface.opacity(0.85), in: Rectangle())
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(Brand.panelEdge, lineWidth: 1)
+                        Rectangle()
+                            .stroke(Brand.line, lineWidth: 1)
                     )
             }
-            .tint(Brand.textPrimary)
+            .tint(Brand.text)
             .accessibilityLabel(String(localized: "Cancel scan"))
 
             Spacer()
 
             VStack(alignment: .trailing, spacing: 1) {
                 Text("\(engine.shotCount) photos")
-                    .font(.footnote.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(Brand.textPrimary)
+                    .font(BrandFont.mono(13, weight: .semibold))
+                    .foregroundStyle(Brand.text)
                     .contentTransition(.numericText())
                     .animation(.easeOut(duration: 0.25), value: engine.shotCount)
                 HStack(spacing: 5) {
@@ -527,27 +520,27 @@ private struct TurntableOverlay: View {
                     }
                     if engine.isLocked {
                         Image(systemName: "lock.fill")
-                            .foregroundStyle(Brand.phosphor)
+                            .foregroundStyle(Brand.accent)
                     }
                     if engine.rejectedShots > 0 {
                         Text("· \(engine.rejectedShots) blurry")
-                            .foregroundStyle(Brand.phosphorBright)
+                            .foregroundStyle(Brand.accentDeep)
                     }
                 }
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(Brand.textSecondary)
+                .font(BrandFont.mono(11))
+                .foregroundStyle(Brand.muted)
                 if !engine.canFinish {
                     Text("at least \(TurntableCaptureEngine.minimumShots)")
-                        .font(.caption2)
-                        .foregroundStyle(Brand.textTertiary)
+                        .font(BrandFont.mono(11))
+                        .foregroundStyle(Brand.muted)
                 }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Brand.panel.opacity(0.85), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(Brand.surface.opacity(0.85), in: Rectangle())
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Brand.panelEdge, lineWidth: 1)
+                Rectangle()
+                    .stroke(Brand.line, lineWidth: 1)
             )
             .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 4)
         }
@@ -564,8 +557,8 @@ private struct TurntableOverlay: View {
                 HStack(spacing: 8) {
                     PulsingDot()
                     Text("Recording video — rotate the turntable at a steady speed")
-                        .font(.footnote)
-                        .foregroundStyle(Brand.textSecondary)
+                        .font(BrandFont.mono(13))
+                        .foregroundStyle(Brand.muted)
                         .multilineTextAlignment(.center)
                 }
             } else if engine.shouldChangeElevation {
@@ -573,8 +566,8 @@ private struct TurntableOverlay: View {
                     "One revolution done — change the phone's height or angle and shoot another",
                     systemImage: "arrow.up.and.down.circle.fill"
                 )
-                .font(.footnote.weight(.medium))
-                .foregroundStyle(Brand.phosphorBright)
+                .font(BrandFont.mono(13, weight: .medium))
+                .foregroundStyle(Brand.accentDeep)
                 .multilineTextAlignment(.center)
             } else {
                 HStack(spacing: 8) {
@@ -584,8 +577,8 @@ private struct TurntableOverlay: View {
                     Text(engine.isAutoCapturing
                          ? String(localized: "Auto-capture is on — keep rotating the object slowly")
                          : String(localized: "Rotate the object ~10° and shoot"))
-                        .font(.footnote)
-                        .foregroundStyle(Brand.textSecondary)
+                        .font(BrandFont.mono(13))
+                        .foregroundStyle(Brand.muted)
                         .multilineTextAlignment(.center)
                 }
             }
@@ -624,8 +617,8 @@ private struct TurntableOverlay: View {
                 .buttonStyle(BrandSecondaryButton())
                 .disabled(engine.isAutoCapturing || engine.isRecordingVideo)
                 .overlay {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Brand.phosphor, lineWidth: 2)
+                    Rectangle()
+                        .stroke(Brand.accent, lineWidth: 2)
                         .scaleEffect(rippleScale)
                         .opacity(rippleOpacity)
                 }
@@ -635,7 +628,7 @@ private struct TurntableOverlay: View {
                 } label: {
                     Image(systemName: engine.isRecordingVideo ? "stop.fill" : "video.fill")
                         .font(.title3)
-                        .foregroundStyle(engine.isRecordingVideo ? Brand.danger : Brand.textPrimary)
+                        .foregroundStyle(engine.isRecordingVideo ? Brand.signal : Brand.text)
                         .frame(width: 56, height: 48)
                         .accessibilityLabel(engine.isRecordingVideo
                             ? String(localized: "Stop recording video")
@@ -649,7 +642,7 @@ private struct TurntableOverlay: View {
                 finish()
             } label: {
                 if isFinishing {
-                    ProgressView().tint(.black)
+                    ProgressView().tint(Brand.onAccent)
                 } else {
                     Text("Finish and Build Model")
                 }
@@ -659,14 +652,14 @@ private struct TurntableOverlay: View {
 
             if !engine.canFinish {
                 Text("The solver needs at least \(TurntableCaptureEngine.minimumShots) photos to close the loop.")
-                    .font(.caption2)
-                    .foregroundStyle(Brand.textTertiary)
+                    .font(BrandFont.mono(11))
+                    .foregroundStyle(Brand.muted)
                     .multilineTextAlignment(.center)
             }
         }
         .frame(maxWidth: .infinity)
         .padding(16)
-        .depthPanel(cornerRadius: 18)
+        .brandPanel()
         .tiltParallax(magnitude: 5)
         .transition(.move(edge: .bottom).combined(with: .opacity))
         // The device is on a tripod and the user is looking at the object, so a tick
@@ -712,9 +705,9 @@ private struct PulsingDot: View {
 
     var body: some View {
         Circle()
-            .fill(Brand.phosphor)
+            .fill(Brand.accent)
             .frame(width: 8, height: 8)
-            .phosphorGlow(radius: 8, opacity: 0.8)
+            .brandGlow(radius: 8)
             .scaleEffect(pulse ? 1.4 : 1)
             .opacity(pulse ? 0.55 : 1)
             .onAppear {
@@ -732,33 +725,33 @@ struct TurntableReconstructionView: View {
 
     var body: some View {
         ZStack {
-            Brand.ink.ignoresSafeArea()
+            Brand.bg.ignoresSafeArea()
             RuneWatermark()
                 .frame(width: 280, height: 280)
-            GrainOverlay()
 
             VStack(spacing: 18) {
                 ShimmerProgressBar(fraction: progress.fraction)
                     .frame(maxWidth: 240)
 
                 Text(progress.stage?.displayName ?? String(localized: "Building model"))
-                    .font(.headline)
-                    .foregroundStyle(Brand.textPrimary)
+                    .font(BrandFont.mono(17, weight: .semibold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(Brand.text)
                     // The stage enum isn't Hashable; its raw value is a stable identity.
                     .id(progress.stage?.rawValue ?? -1)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
 
                 if let remaining = progress.remainingText {
                     Text("\(remaining) left")
-                        .font(.subheadline)
-                        .foregroundStyle(Brand.textSecondary)
+                        .font(BrandFont.mono(15))
+                        .foregroundStyle(Brand.muted)
                 }
                 Text("Don't background the app.")
-                    .font(.footnote)
-                    .foregroundStyle(Brand.textTertiary)
+                    .font(BrandFont.mono(13))
+                    .foregroundStyle(Brand.muted)
             }
             .padding(28)
-            .depthPanel()
+            .brandPanel()
             .padding(.horizontal, 40)
             .staggerIn(delay: 0.05)
         }
@@ -773,27 +766,27 @@ struct TurntableVideoProcessingView: View {
 
     var body: some View {
         ZStack {
-            Brand.ink.ignoresSafeArea()
+            Brand.bg.ignoresSafeArea()
             RuneWatermark()
                 .frame(width: 280, height: 280)
-            GrainOverlay()
 
             VStack(spacing: 18) {
                 ShimmerProgressBar(fraction: progress.fraction)
                     .frame(maxWidth: 240)
 
                 Text(progress.stage ?? String(localized: "Processing video"))
-                    .font(.headline)
-                    .foregroundStyle(Brand.textPrimary)
+                    .font(BrandFont.mono(17, weight: .semibold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(Brand.text)
                     .id(progress.stage ?? "")
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
 
                 Text("Don't background the app.")
-                    .font(.footnote)
-                    .foregroundStyle(Brand.textTertiary)
+                    .font(BrandFont.mono(13))
+                    .foregroundStyle(Brand.muted)
             }
             .padding(28)
-            .depthPanel()
+            .brandPanel()
             .padding(.horizontal, 40)
             .staggerIn(delay: 0.05)
         }
@@ -811,10 +804,10 @@ private struct ShimmerProgressBar: View {
         GeometryReader { geo in
             let width = geo.size.width
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Brand.phosphor.gradient)
+                Rectangle()
+                    .fill(Brand.text.opacity(0.12))
+                Rectangle()
+                    .fill(Brand.accent)
                     .frame(width: width * max(0.03, fraction))
                     .overlay {
                         LinearGradient(
@@ -825,8 +818,8 @@ private struct ShimmerProgressBar: View {
                         .frame(width: 64)
                         .offset(x: sweep * width)
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .phosphorGlow(radius: 10, opacity: 0.45)
+                    .clipShape(Rectangle())
+
             }
         }
         .frame(height: 10)
@@ -850,8 +843,7 @@ struct TurntableResultView: View {
 
     var body: some View {
         ZStack {
-            Brand.ink.ignoresSafeArea()
-            GrainOverlay()
+            Brand.bg.ignoresSafeArea()
 
             // Scrollable because the pose diagnosis can run to three paragraphs, and a
             // clipped explanation is worse than no explanation.
@@ -865,45 +857,47 @@ struct TurntableResultView: View {
         VStack(spacing: 18) {
             ModelPreviewView(url: storage.modelURL(for: record))
                 .frame(height: 300)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(Rectangle())
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Brand.panelEdge, lineWidth: 1)
+                    Rectangle()
+                        .stroke(Brand.line, lineWidth: 1)
                 )
                 .shadow(color: .black.opacity(0.5), radius: 18, x: 0, y: 10)
                 .staggerIn(delay: 0)
 
             VStack(spacing: 4) {
                 Label("Scan ready", systemImage: "checkmark.circle.fill")
-                    .font(.headline)
+                    .font(BrandFont.mono(17, weight: .semibold))
+                    .textCase(.uppercase)
                     .foregroundStyle(Brand.ok)
                 if let count = record.imageCount {
                     Text("\(count) photos processed")
-                        .font(.footnote)
-                        .foregroundStyle(Brand.textSecondary)
+                        .font(BrandFont.mono(13))
+                        .foregroundStyle(Brand.muted)
                 }
                 // The three numbers that explain the mesh: how many frames actually
                 // got aligned, and how the cameras were spread around the object.
                 if let summary = record.summary {
                     Text(summary)
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(Brand.textTertiary)
+                        .font(BrandFont.mono(12))
+                        .foregroundStyle(Brand.muted)
                 }
                 if !record.isMetricallyScaled {
                     Text("Unscaled — no depth data")
-                        .font(.caption)
-                        .foregroundStyle(Brand.phosphorBright)
+                        .font(BrandFont.mono(12, weight: .medium))
+                        .textCase(.uppercase)
+                        .foregroundStyle(Brand.accentDeep)
                 }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .depthPanel()
+            .brandPanel()
             .staggerIn(delay: 0.08)
 
             ForEach(Array(warnings.enumerated()), id: \.offset) { _, warning in
                 Label(warning, systemImage: "lightbulb.fill")
-                    .font(.caption)
-                    .foregroundStyle(Brand.phosphorBright)
+                    .font(BrandFont.mono(12))
+                    .foregroundStyle(Brand.accentDeep)
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
                     .staggerIn(delay: 0.14)
@@ -928,26 +922,26 @@ struct TurntableMessageView: View {
 
     var body: some View {
         ZStack {
-            Brand.ink.ignoresSafeArea()
-            GrainOverlay()
+            Brand.bg.ignoresSafeArea()
 
             VStack(spacing: 16) {
                 Image(systemName: systemImage)
                     .font(.largeTitle)
                     .foregroundStyle(tint)
                 Text(title)
-                    .font(.headline)
-                    .foregroundStyle(Brand.textPrimary)
+                    .font(BrandFont.mono(17, weight: .semibold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(Brand.text)
                 Text(message)
                     .multilineTextAlignment(.center)
-                    .font(.subheadline)
-                    .foregroundStyle(Brand.textSecondary)
+                    .font(BrandFont.mono(15))
+                    .foregroundStyle(Brand.muted)
                 Button("Close", action: onDismiss)
                     .buttonStyle(BrandPrimaryButton())
                     .padding(.horizontal, 40)
             }
             .padding(32)
-            .depthPanel()
+            .brandPanel()
             .padding(.horizontal, 24)
             .staggerIn(delay: 0.05)
         }
@@ -975,18 +969,19 @@ struct ObjectMaskRectangle: View {
     var body: some View {
         GeometryReader { _ in
             Rectangle()
-                .stroke(Brand.phosphor, style: StrokeStyle(lineWidth: 2, dash: [8, 5]))
-                .background(Brand.phosphor.opacity(0.06))
-                .phosphorGlow(radius: 6, opacity: 0.25)
+                .stroke(Brand.accent, style: StrokeStyle(lineWidth: 2, dash: [8, 5]))
+                .background(Brand.accent.opacity(0.06))
+                .brandGlow(radius: 6)
                 .frame(width: displayed.width, height: displayed.height)
                 .position(x: displayed.midX, y: displayed.midY)
                 .overlay(alignment: .topLeading) {
                     Text("object")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.black)
+                        .font(BrandFont.mono(10, weight: .semibold))
+                        .textCase(.uppercase)
+                        .foregroundStyle(Brand.onAccent)
                         .padding(.horizontal, 5)
                         .padding(.vertical, 2)
-                        .background(Brand.phosphor, in: Capsule())
+                        .background(Brand.accent, in: Rectangle())
                         // The overlay is already anchored at the rect's
                         // top-leading corner, so offset in the overlay's own
                         // coordinates — positioning with displayed.minX/minY

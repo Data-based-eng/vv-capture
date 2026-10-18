@@ -29,13 +29,13 @@ struct CoverageCard: View {
             Text(complete
                 ? String(localized: "Full turn complete")
                 : String(localized: "\(covered)/\(notchCount) sides"))
-                .font(.caption2.monospacedDigit().weight(.semibold))
-                .foregroundStyle(complete ? Brand.phosphorBright : Brand.textSecondary)
+                .font(BrandFont.mono(11, weight: .semibold))
+                .foregroundStyle(complete ? Brand.accentDeep : Brand.muted)
                 .contentTransition(.numericText())
                 .animation(.easeOut(duration: 0.25), value: covered)
         }
         .padding(10)
-        .depthPanel(cornerRadius: 14)
+        .brandPanel()
         .transition(.move(edge: .leading).combined(with: .opacity))
         // VoiceOver reads one summary instead of an unlabeled canvas of ticks.
         .accessibilityElement(children: .ignore)
@@ -81,8 +81,8 @@ private struct CoverageCanvas: View {
                 width: radius * 2, height: radius * 2 * squash
             )
             let disc = Path(ellipseIn: discRect)
-            context.fill(disc, with: .color(Brand.panel))
-            context.stroke(disc, with: .color(Brand.phosphor.opacity(0.25)), lineWidth: 1)
+            context.fill(disc, with: .color(Brand.surface))
+            context.stroke(disc, with: .color(Brand.accent.opacity(0.25)), lineWidth: 1)
 
             // Orbit ring the virtual cameras sit on.
             let ringR = radius + 9
@@ -92,7 +92,7 @@ private struct CoverageCanvas: View {
             )
             context.stroke(
                 Path(ellipseIn: ringRect),
-                with: .color(.white.opacity(0.14)), lineWidth: 1
+                with: .color(Brand.text.opacity(0.25)), lineWidth: 1
             )
 
             // Notch ticks: one slot per photo around the turn.
@@ -104,7 +104,7 @@ private struct CoverageCanvas: View {
                 let hit = captured.contains(n)
                 context.stroke(
                     tick,
-                    with: .color(hit ? Brand.phosphor : .white.opacity(0.14)),
+                    with: .color(hit ? Brand.accent : Brand.text.opacity(0.25)),
                     lineWidth: hit ? 2.5 : 1
                 )
             }
@@ -131,7 +131,7 @@ private struct CoverageCanvas: View {
                 ))
                 context.stroke(
                     leader,
-                    with: .color(Brand.phosphor.opacity(alpha)),
+                    with: .color(Brand.accent.opacity(alpha)),
                     lineWidth: 1.5
                 )
 
@@ -139,25 +139,25 @@ private struct CoverageCanvas: View {
                 let glyphScale = pop * (0.7 + 0.5 * d)
                 let w: CGFloat = 12 * glyphScale
                 let h: CGFloat = 9 * glyphScale
-                let rect = RoundedRectangle(cornerRadius: 2)
+                let rect = Rectangle()
                     .path(in: CGRect(x: p.x - w / 2, y: p.y - h / 2, width: w, height: h))
                 if glow > 0.01 {
                     context.stroke(
                         rect,
-                        with: .color(Brand.phosphor.opacity(glow * 0.8)),
+                        with: .color(Brand.accent.opacity(glow * 0.8)),
                         lineWidth: 3
                     )
                 }
                 context.stroke(
                     rect,
-                    with: .color(Brand.phosphor.opacity(alpha)),
+                    with: .color(Brand.accent.opacity(alpha)),
                     lineWidth: 1.5
                 )
             }
 
             // The product at the center.
             let dot = Path(ellipseIn: CGRect(x: cx - 3, y: cy - 3, width: 6, height: 6))
-            context.fill(dot, with: .color(Brand.phosphorBright))
+            context.fill(dot, with: .color(Brand.accentDeep))
         }
         .frame(height: 118)
         .onChange(of: indices.count) { _, _ in

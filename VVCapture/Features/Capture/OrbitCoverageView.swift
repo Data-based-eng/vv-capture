@@ -19,42 +19,39 @@ struct OrbitCoverageCard: View {
                 ForEach(0..<binCount, id: \.self) { bin in
                     let angle = Double(bin) / Double(binCount) * 360
                     let covered = coveredBins.contains(bin)
-                    Capsule()
-                        .fill(covered ? Brand.phosphor : Brand.phosphor.opacity(0.16))
+                    Rectangle()
+                        .fill(covered ? Brand.accent : Brand.accent.opacity(0.16))
                         .frame(width: 3, height: covered ? 12 : 8)
                         .offset(y: -52)
                         .rotationEffect(.degrees(angle))
-                        .shadow(color: covered ? Brand.phosphor.opacity(0.7) : .clear, radius: 4)
+                        .shadow(color: covered ? Brand.accent.opacity(0.7) : .clear, radius: 4)
                 }
                 // Direction hint: the gap at the top is where you started.
                 if isRecording {
                     Circle()
-                        .fill(Brand.danger)
+                        .fill(Brand.signal)
                         .frame(width: 8, height: 8)
                         .offset(y: -52)
                 }
                 VStack(spacing: 2) {
                     Text("\(Int(coverageDegrees))°")
-                        .font(.system(size: 22, weight: .bold, design: .monospaced))
-                        .foregroundStyle(Brand.phosphor)
+                        .font(BrandFont.mono(22, weight: .bold))
+                        .foregroundStyle(Brand.accent)
                     // String(localized:): the ternary resolves to String, not a
                     // LocalizedStringKey, so the strings are localized at creation.
                     Text(coveredBins.count >= binCount
                         ? String(localized: "Full orbit")
                         : String(localized: "of 360°"))
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(Brand.textTertiary)
+                        .font(BrandFont.mono(11, weight: .medium))
+                        .textCase(.uppercase)
+                        .foregroundStyle(Brand.muted)
                 }
             }
             .frame(width: 132, height: 132)
             .animation(.easeOut(duration: 0.3), value: coveredBins)
         }
         .padding(12)
-        .background(Brand.panel.opacity(0.85), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Brand.panelEdge, lineWidth: 1)
-        )
+        .brandPanel()
         // VoiceOver reads one summary instead of 72 unlabeled segments.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilitySummary)

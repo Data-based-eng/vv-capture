@@ -12,20 +12,21 @@ struct CaptureModePicker: View {
 
     var body: some View {
         ZStack {
-            Brand.ink.ignoresSafeArea()
-            VignetteOverlay()
-            GrainOverlay(opacity: 0.035)
+            Brand.bg.ignoresSafeArea()
+            ScanlineOverlay()
 
             VStack(spacing: 20) {
                 Spacer(minLength: 0)
 
                 VStack(spacing: 8) {
                     Text("VV Capture")
-                        .font(.largeTitle.weight(.bold))
-                        .foregroundStyle(Brand.textPrimary)
+                        .font(BrandFont.mono(32, weight: .bold))
+                        .textCase(.uppercase)
+                        .foregroundStyle(Brand.accentDeep)
+                        .brandGlow()
                     Text("How are you capturing today?")
-                        .font(.subheadline)
-                        .foregroundStyle(Brand.textSecondary)
+                        .font(BrandFont.mono(15))
+                        .foregroundStyle(Brand.muted)
                 }
                 .padding(.bottom, 8)
 
@@ -36,15 +37,14 @@ struct CaptureModePicker: View {
                 Spacer(minLength: 0)
 
                 Text("Models build on-device with the existing photogrammetry pipeline.")
-                    .font(.caption2)
-                    .foregroundStyle(Brand.textTertiary)
+                    .font(BrandFont.mono(12))
+                    .foregroundStyle(Brand.muted)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 32)
         }
-        .preferredColorScheme(.dark)
     }
 
     private func modeCard(for kind: ScanEngineKind) -> some View {
@@ -54,25 +54,26 @@ struct CaptureModePicker: View {
             HStack(spacing: 16) {
                 Image(systemName: kind == .turntable ? "rotate.3d" : "figure.walk.circle")
                     .font(.system(size: 28))
-                    .foregroundStyle(Brand.phosphor)
+                    .foregroundStyle(Brand.accent)
                     .frame(width: 52, height: 52)
-                    .background(Brand.phosphorDim, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Brand.accent.opacity(0.14), in: Rectangle())
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(kind.displayName)
-                        .font(.headline)
-                        .foregroundStyle(Brand.textPrimary)
+                        .font(BrandFont.mono(17, weight: .semibold))
+                        .textCase(.uppercase)
+                        .foregroundStyle(Brand.text)
                     Text(kind.tagline)
-                        .font(.subheadline)
-                        .foregroundStyle(Brand.textSecondary)
+                        .font(BrandFont.mono(14))
+                        .foregroundStyle(Brand.muted)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
-                    .foregroundStyle(Brand.textTertiary)
+                    .foregroundStyle(Brand.muted)
             }
             .padding(16)
         }
-        .depthPanel(cornerRadius: 18)
+        .brandPanel()
         .tiltParallax(magnitude: 4)
     }
 }
@@ -86,7 +87,7 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            Brand.ink.ignoresSafeArea()
+            Brand.bg.ignoresSafeArea()
             if let mode {
                 flow(for: mode)
                     .id(runID)
@@ -143,7 +144,6 @@ struct RootView: View {
 #Preview {
     RootView()
         .environment(ScanStorage())
-        .preferredColorScheme(.dark)
 }
 
 /// C1 denial path: the user said no (or restricted) to camera access. Shows
@@ -154,20 +154,20 @@ private struct CameraPermissionDeniedView: View {
 
     var body: some View {
         ZStack {
-            Brand.ink.ignoresSafeArea()
-            GrainOverlay()
+            Brand.bg.ignoresSafeArea()
 
             VStack(spacing: 16) {
                 Image(systemName: "video.slash.fill")
                     .font(.largeTitle)
-                    .foregroundStyle(Brand.phosphor)
+                    .foregroundStyle(Brand.accent)
                 Text(String(localized: "Camera access needed"))
-                    .font(.headline)
-                    .foregroundStyle(Brand.textPrimary)
+                    .font(BrandFont.mono(17, weight: .semibold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(Brand.text)
                 Text(CameraPermission.denialMessage)
                     .multilineTextAlignment(.center)
-                    .font(.subheadline)
-                    .foregroundStyle(Brand.textSecondary)
+                    .font(BrandFont.mono(14))
+                    .foregroundStyle(Brand.muted)
                 Button(String(localized: "Open Settings")) {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
@@ -176,11 +176,12 @@ private struct CameraPermissionDeniedView: View {
                 .buttonStyle(BrandPrimaryButton())
                 .padding(.horizontal, 40)
                 Button(String(localized: "Close"), action: onClose)
-                    .font(.footnote)
-                    .foregroundStyle(Brand.textTertiary)
+                    .font(BrandFont.mono(13, weight: .medium))
+                    .textCase(.uppercase)
+                    .foregroundStyle(Brand.muted)
             }
             .padding(32)
-            .depthPanel()
+            .brandPanel()
             .padding(.horizontal, 24)
         }
     }
