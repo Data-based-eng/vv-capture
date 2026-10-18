@@ -1,6 +1,1587 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "· %lld blurry" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "· %lld blurry"
+          }
+        }
+      }
+    },
+    "(cleanup failed — frame kept)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(cleanup failed — frame kept)"
+          }
+        }
+      }
+    },
+    "%@ · azimuth %lld° · elevation %lld°" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · azimuth %2$lld° · elevation %3$lld°"
+          }
+        }
+      }
+    },
+    "%@ left" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ left"
+          }
+        }
+      }
+    },
+    "%@ scan %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ scan %2$@"
+          }
+        }
+      }
+    },
+    "%lld frames couldn't be aligned and never entered the model — only %lld%% were used. When walking, the most common causes are motion blur and fast turns: pause briefly while rotating the phone and add light. Empty flat walls also leave no pattern to match." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld frames couldn't be aligned and never entered the model — only %2$lld%% were used. When walking, the most common causes are motion blur and fast turns: pause briefly while rotating the phone and add light. Empty flat walls also leave no pattern to match."
+          }
+        }
+      }
+    },
+    "%lld MP" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld MP"
+          }
+        }
+      }
+    },
+    "%lld of %lld angles yielded frames" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld angles yielded frames"
+          }
+        }
+      }
+    },
+    "%lld of %lld sides captured" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld sides captured"
+          }
+        }
+      }
+    },
+    "%lld of %lld windows yielded frames" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld windows yielded frames"
+          }
+        }
+      }
+    },
+    "%lld of 360 degrees covered" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld of 360 degrees covered"
+          }
+        }
+      }
+    },
+    "%lld photos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld photos"
+          }
+        }
+      }
+    },
+    "%lld photos couldn't be aligned and never entered the model. The most common cause is light rotating with the object: as the object turns, shadows slide across the surface and the solver can't match the same point in two frames. Make the light soft from all sides, or rotate the lamp with the object." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld photos couldn't be aligned and never entered the model. The most common cause is light rotating with the object: as the object turns, shadows slide across the surface and the solver can't match the same point in two frames. Make the light soft from all sides, or rotate the lamp with the object."
+          }
+        }
+      }
+    },
+    "%lld photos processed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld photos processed"
+          }
+        }
+      }
+    },
+    "%lld photos will be deleted." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld photos will be deleted."
+          }
+        }
+      }
+    },
+    "%lld/%lld aligned" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld aligned"
+          }
+        }
+      }
+    },
+    "%lld/%lld sides" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld sides"
+          }
+        }
+      }
+    },
+    "%lld°" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%lld°"
+          }
+        }
+      }
+    },
+    "3D printing. Geometry only, no materials." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "3D printing. Geometry only, no materials."
+          }
+        }
+      }
+    },
+    "A capture session is already active." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A capture session is already active."
+          }
+        }
+      }
+    },
+    "A plain background still helps" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A plain background still helps"
+          }
+        }
+      }
+    },
+    "A video frame could not be decoded for analysis." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A video frame could not be decoded for analysis."
+          }
+        }
+      }
+    },
+    "A video frame could not be saved." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A video frame could not be saved."
+          }
+        }
+      }
+    },
+    "about %lld minutes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "about %lld minutes"
+          }
+        }
+      }
+    },
+    "Almost all frames are from the same height (%lld° elevation spread). Cameras on a single ring give no vertical parallax, so top and bottom surfaces come out soft. Changing the phone's height/angle and shooting a second revolution is the single biggest improvement." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Almost all frames are from the same height (%lld° elevation spread). Cameras on a single ring give no vertical parallax, so top and bottom surfaces come out soft. Changing the phone's height/angle and shooting a second revolution is the single biggest improvement."
+          }
+        }
+      }
+    },
+    "Apple ecosystem, AR Quick Look. Source format — no conversion." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Apple ecosystem, AR Quick Look. Source format — no conversion."
+          }
+        }
+      }
+    },
+    "As the object turns, the light stays fixed relative to it. Shadows slide across the surface and the solver can't recognize the same point in two frames. Use diffuse light instead of a single lamp; if possible, rotate the lamp with the object." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "As the object turns, the light stays fixed relative to it. Shadows slide across the surface and the solver can't recognize the same point in two frames. Use diffuse light instead of a single lamp; if possible, rotate the lamp with the object."
+          }
+        }
+      }
+    },
+    "at least %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "at least %lld"
+          }
+        }
+      }
+    },
+    "Auto Capture" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Auto Capture"
+          }
+        }
+      }
+    },
+    "Auto-capture is on — keep rotating the object slowly" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Auto-capture is on — keep rotating the object slowly"
+          }
+        }
+      }
+    },
+    "Azimuth coverage %lld° — mostly because %lld frames never aligned. Those sides are missing from the model entirely, not just soft: fix the alignment problem above and the coverage follows." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Azimuth coverage %1$lld° — mostly because %2$lld frames never aligned. Those sides are missing from the model entirely, not just soft: fix the alignment problem above and the coverage follows."
+          }
+        }
+      }
+    },
+    "Azimuth coverage %lld° — the full turn didn't close. The uncovered side will have hallucinated surface." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Azimuth coverage %lld° — the full turn didn't close. The uncovered side will have hallucinated surface."
+          }
+        }
+      }
+    },
+    "Back to Scan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Back to Scan"
+          }
+        }
+      }
+    },
+    "Blurry frame skipped — rotate more slowly" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Blurry frame skipped — rotate more slowly"
+          }
+        }
+      }
+    },
+    "Building model" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Building model"
+          }
+        }
+      }
+    },
+    "Camera access is needed to 3D-scan products for VisionVend onboarding. Open Settings and allow camera access to continue." : {
+      "comment" : "Explains that camera permission was denied and how to fix it",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Camera access is needed to 3D-scan products for VisionVend onboarding. Open Settings and allow camera access to continue."
+          }
+        }
+      }
+    },
+    "Camera access needed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Camera access needed"
+          }
+        }
+      }
+    },
+    "Camera busy — shot skipped" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Camera busy — shot skipped"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "Cancel scan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cancel scan"
+          }
+        }
+      }
+    },
+    "Cancel the scan?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cancel the scan?"
+          }
+        }
+      }
+    },
+    "Capture is good: frames aligned. The low quality isn't the capture — it's the on-device `reduced` level: ~25,000 triangles and a single texture spread over the whole surface. Plenty for a small product, far too few for anything bigger. Frames are saved: reprocessing on a Mac at `.raw` is the real fix." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Capture is good: frames aligned. The low quality isn't the capture — it's the on-device `reduced` level: ~25,000 triangles and a single texture spread over the whole surface. Plenty for a small product, far too few for anything bigger. Frames are saved: reprocessing on a Mac at `.raw` is the real fix."
+          }
+        }
+      }
+    },
+    "Close" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "Common interchange format. Blender, MeshLab, ZBrush." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Common interchange format. Blender, MeshLab, ZBrush."
+          }
+        }
+      }
+    },
+    "Couldn't add input." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't add input."
+          }
+        }
+      }
+    },
+    "Couldn't add movie output." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't add movie output."
+          }
+        }
+      }
+    },
+    "Couldn't add photo output." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't add photo output."
+          }
+        }
+      }
+    },
+    "Couldn't apply mask, background included: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't apply mask, background included: %@"
+          }
+        }
+      }
+    },
+    "Couldn't configure the camera: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't configure the camera: %@"
+          }
+        }
+      }
+    },
+    "Couldn't configure the video camera: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't configure the video camera: %@"
+          }
+        }
+      }
+    },
+    "Couldn't create archive: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't create archive: %@"
+          }
+        }
+      }
+    },
+    "Couldn't create the model" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't create the model"
+          }
+        }
+      }
+    },
+    "Couldn't create the model: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't create the model: %@"
+          }
+        }
+      }
+    },
+    "Couldn't get photo data." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't get photo data."
+          }
+        }
+      }
+    },
+    "Couldn't Lock" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't Lock"
+          }
+        }
+      }
+    },
+    "Couldn't open the camera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't open the camera"
+          }
+        }
+      }
+    },
+    "Couldn't save frame %lld: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't save frame %1$lld: %2$@"
+          }
+        }
+      }
+    },
+    "Couldn't start the scan session: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't start the scan session: %@"
+          }
+        }
+      }
+    },
+    "Couldn't write the archive." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't write the archive."
+          }
+        }
+      }
+    },
+    "Discard and Exit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Discard and Exit"
+          }
+        }
+      }
+    },
+    "Don't background the app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don't background the app."
+          }
+        }
+      }
+    },
+    "Done" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "Drag to move, pinch with two fingers to resize. Only the inside of the frame is modeled — table, paper, and background are fully excluded. Because the phone is fixed, one frame covers every shot." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Drag to move, pinch with two fingers to resize. Only the inside of the frame is modeled — table, paper, and background are fully excluded. Because the phone is fixed, one frame covers every shot."
+          }
+        }
+      }
+    },
+    "Extracting frames" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Extracting frames"
+          }
+        }
+      }
+    },
+    "Extracting mesh" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Extracting mesh"
+          }
+        }
+      }
+    },
+    "Extracting sharp frames" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Extracting sharp frames"
+          }
+        }
+      }
+    },
+    "Finish and Build Model" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Finish and Build Model"
+          }
+        }
+      }
+    },
+    "Focus Locked" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Focus Locked"
+          }
+        }
+      }
+    },
+    "Frame the product, hit record, then walk all the way around it" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Frame the product, hit record, then walk all the way around it"
+          }
+        }
+      }
+    },
+    "Full orbit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Full orbit"
+          }
+        }
+      }
+    },
+    "Full orbit covered" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Full orbit covered"
+          }
+        }
+      }
+    },
+    "Full orbit covered — stop when you're happy with the angles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Full orbit covered — stop when you're happy with the angles"
+          }
+        }
+      }
+    },
+    "Full turn complete" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Full turn complete"
+          }
+        }
+      }
+    },
+    "Generating point cloud" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Generating point cloud"
+          }
+        }
+      }
+    },
+    "Got it, Start" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Got it, Start"
+          }
+        }
+      }
+    },
+    "How are you capturing today?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "How are you capturing today?"
+          }
+        }
+      }
+    },
+    "Keep the phone still" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Keep the phone still"
+          }
+        }
+      }
+    },
+    "Less than a minute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Less than a minute"
+          }
+        }
+      }
+    },
+    "Lock Focus" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Lock Focus"
+          }
+        }
+      }
+    },
+    "Locking…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Locking…"
+          }
+        }
+      }
+    },
+    "Masked processing failed, retried without mask." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Masked processing failed, retried without mask."
+          }
+        }
+      }
+    },
+    "Measuring rotation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Measuring rotation"
+          }
+        }
+      }
+    },
+    "Model file not found." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Model file not found."
+          }
+        }
+      }
+    },
+    "Models build on-device with the existing photogrammetry pipeline." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Models build on-device with the existing photogrammetry pipeline."
+          }
+        }
+      }
+    },
+    "No active capture session." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No active capture session."
+          }
+        }
+      }
+    },
+    "No active session." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No active session."
+          }
+        }
+      }
+    },
+    "No frames could be extracted." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No frames could be extracted."
+          }
+        }
+      }
+    },
+    "No images were captured. Try the scan again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No images were captured. Try the scan again."
+          }
+        }
+      }
+    },
+    "No photos were taken." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No photos were taken."
+          }
+        }
+      }
+    },
+    "No turntable rotation was detected in the video. Make sure the table is turning while recording, with a few seconds of still footage before and after." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No turntable rotation was detected in the video. Make sure the table is turning while recording, with a few seconds of still footage before and after."
+          }
+        }
+      }
+    },
+    "No video was recorded." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No video was recorded."
+          }
+        }
+      }
+    },
+    "object" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "object"
+          }
+        }
+      }
+    },
+    "of 360°" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "of 360°"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "On-device (reduced)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On-device (reduced)"
+          }
+        }
+      }
+    },
+    "One revolution done — change the phone's height or angle and shoot another" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "One revolution done — change the phone's height or angle and shoot another"
+          }
+        }
+      }
+    },
+    "One revolution isn't enough — change the height" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "One revolution isn't enough — change the height"
+          }
+        }
+      }
+    },
+    "Open Settings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Settings"
+          }
+        }
+      }
+    },
+    "Optimizing model" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Optimizing model"
+          }
+        }
+      }
+    },
+    "Partial orbit: only %lld° of 360° was covered. Walk all the way around next time." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Partial orbit: only %lld° of 360° was covered. Walk all the way around next time."
+          }
+        }
+      }
+    },
+    "Phone orbit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Phone orbit"
+          }
+        }
+      }
+    },
+    "Place the amber frame over the object" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Place the amber frame over the object"
+          }
+        }
+      }
+    },
+    "Placing texture" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Placing texture"
+          }
+        }
+      }
+    },
+    "Point cloud / mesh, geometry-focused tools." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Point cloud / mesh, geometry-focused tools."
+          }
+        }
+      }
+    },
+    "Preparing camera…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Preparing camera…"
+          }
+        }
+      }
+    },
+    "Preparing images" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Preparing images"
+          }
+        }
+      }
+    },
+    "Preparing…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Preparing…"
+          }
+        }
+      }
+    },
+    "Processing video" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Processing video"
+          }
+        }
+      }
+    },
+    "Product spins, phone stays put." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Product spins, phone stays put."
+          }
+        }
+      }
+    },
+    "Product stays put, walk around it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Product stays put, walk around it."
+          }
+        }
+      }
+    },
+    "Rear camera not found." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Rear camera not found."
+          }
+        }
+      }
+    },
+    "REC" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "REC"
+          }
+        }
+      }
+    },
+    "Record a video of the product first." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Record a video of the product first."
+          }
+        }
+      }
+    },
+    "Record video" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Record video"
+          }
+        }
+      }
+    },
+    "Recording video — rotate the turntable at a steady speed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Recording video — rotate the turntable at a steady speed"
+          }
+        }
+      }
+    },
+    "Rotate the object ~10° and shoot" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Rotate the object ~10° and shoot"
+          }
+        }
+      }
+    },
+    "Rotate the object in steps" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Rotate the object in steps"
+          }
+        }
+      }
+    },
+    "Scan cancelled." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Scan cancelled."
+          }
+        }
+      }
+    },
+    "Scan failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Scan failed"
+          }
+        }
+      }
+    },
+    "Scan ready" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Scan ready"
+          }
+        }
+      }
+    },
+    "Session ended without producing a model." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Session ended without producing a model."
+          }
+        }
+      }
+    },
+    "Shots from one height form a single ring with no vertical parallax, so top surfaces come out soft. After one revolution, change the phone's height/angle and shoot another. Flip the object and repeat for the bottom." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shots from one height form a single ring with no vertical parallax, so top surfaces come out soft. After one revolution, change the phone's height/angle and shoot another. Flip the object and repeat for the bottom."
+          }
+        }
+      }
+    },
+    "Soft light from all sides — or alignment suffers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Soft light from all sides — or alignment suffers"
+          }
+        }
+      }
+    },
+    "Solving camera poses" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Solving camera poses"
+          }
+        }
+      }
+    },
+    "Source images were deleted. You'll need to re-scan the object for full detail." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Source images were deleted. You'll need to re-scan the object for full detail."
+          }
+        }
+      }
+    },
+    "Stop Auto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stop Auto"
+          }
+        }
+      }
+    },
+    "Stop recording video" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stop recording video"
+          }
+        }
+      }
+    },
+    "Take photo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Take photo"
+          }
+        }
+      }
+    },
+    "Take recorded — finish to build the model, or record again" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Take recorded — finish to build the model, or record again"
+          }
+        }
+      }
+    },
+    "The camera failed to start — it may be in use by another app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The camera failed to start — it may be in use by another app."
+          }
+        }
+      }
+    },
+    "The camera session failed unexpectedly." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The camera session failed unexpectedly."
+          }
+        }
+      }
+    },
+    "The camera was taken by another app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The camera was taken by another app."
+          }
+        }
+      }
+    },
+    "The frame does the heavy lifting, but if its edges sit close to the object it helps to move the background back a little and use one continuous backdrop instead of loose paper." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The frame does the heavy lifting, but if its edges sit close to the object it helps to move the background back a little and use one continuous backdrop instead of loose paper."
+          }
+        }
+      }
+    },
+    "The only level iOS supports for on-device photogrammetry. Transfer the source images to a Mac for higher polygon counts." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The only level iOS supports for on-device photogrammetry. Transfer the source images to a Mac for higher polygon counts."
+          }
+        }
+      }
+    },
+    "The orbit video is too short — walk around the product for at least a few seconds." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The orbit video is too short — walk around the product for at least a few seconds."
+          }
+        }
+      }
+    },
+    "The recorded file has no video track." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The recorded file has no video track."
+          }
+        }
+      }
+    },
+    "The recorded video will be deleted." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The recorded video will be deleted."
+          }
+        }
+      }
+    },
+    "The rim marker wasn't found, so angles use the rotation speed setting. For measured angles, stick a 2 cm square of bright red or pink tape on the turntable's rim." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The rim marker wasn't found, so angles use the rotation speed setting. For measured angles, stick a 2 cm square of bright red or pink tape on the turntable's rim."
+          }
+        }
+      }
+    },
+    "The scan is already finishing." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The scan is already finishing."
+          }
+        }
+      }
+    },
+    "The solver needs at least %lld photos to close the loop." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The solver needs at least %lld photos to close the loop."
+          }
+        }
+      }
+    },
+    "The video covers only %lld° of rotation — record at least one full turn." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The video covers only %lld° of rotation — record at least one full turn."
+          }
+        }
+      }
+    },
+    "The video is too short to measure rotation." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The video is too short to measure rotation."
+          }
+        }
+      }
+    },
+    "The video recording produced an empty file." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The video recording produced an empty file."
+          }
+        }
+      }
+    },
+    "The video take didn't finalise; the model will be built from stills only." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The video take didn't finalise; the model will be built from stills only."
+          }
+        }
+      }
+    },
+    "The video take was dropped — the recording never finalised." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The video take was dropped — the recording never finalised."
+          }
+        }
+      }
+    },
+    "This device can't embed depth in photos — the model won't be true to scale." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This device can't embed depth in photos — the model won't be true to scale."
+          }
+        }
+      }
+    },
+    "This device doesn't support on-device photogrammetry." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This device doesn't support on-device photogrammetry."
+          }
+        }
+      }
+    },
+    "Timed out waiting for the video file to finalise." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Timed out waiting for the video file to finalise."
+          }
+        }
+      }
+    },
+    "Turn ~10° per shot and pause briefly. Continuous rotation causes motion blur and breaks matching." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn ~10° per shot and pause briefly. Continuous rotation causes motion blur and breaks matching."
+          }
+        }
+      }
+    },
+    "Turntable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turntable"
+          }
+        }
+      }
+    },
+    "Turntable setup" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turntable setup"
+          }
+        }
+      }
+    },
+    "Unknown reason" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unknown reason"
+          }
+        }
+      }
+    },
+    "Unscaled — no depth data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unscaled — no depth data"
+          }
+        }
+      }
+    },
+    "Use a tripod or prop it up. Don't touch the phone during capture." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use a tripod or prop it up. Don't touch the phone during capture."
+          }
+        }
+      }
+    },
+    "Video capture unavailable: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Video capture unavailable: %@"
+          }
+        }
+      }
+    },
+    "Video recording failed to start." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Video recording failed to start."
+          }
+        }
+      }
+    },
+    "VV Capture" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "VV Capture"
+          }
+        }
+      }
+    },
+    "Walk slowly around the product — keep it centered in the frame" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Walk slowly around the product — keep it centered in the frame"
+          }
+        }
+      }
+    }
   },
   "version" : "1.0"
 }
