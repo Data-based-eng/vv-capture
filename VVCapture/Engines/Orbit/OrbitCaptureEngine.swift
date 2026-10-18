@@ -242,8 +242,20 @@ final class OrbitCaptureEngine: ScanEngine {
         // already queued when cancel() runs can land after a new start() (and
         // its new recording) has begun. Generation-gate it so a superseded
         // session's stale yaw can't pollute the new session's coverage bins.
-        let generation = sessionGeneration
-        motionManager.startDeviceMotionUpdates(to: motionQueue) { [weak self] motion, _ in
+        motionManager.startDeviceMotionUpdates(
+            to: motionQueue,
+            withHandler: makeMotionHandler(generation: sessionGeneration)
+        )
+    }
+
+    /// Builds the device-motion handler in a nonisolated context. The handler
+    /// runs on `motionQueue` (a background thread): if the closure inferred
+    /// @MainActor isolation from this class, the ObjC block thunk would trap
+    /// with EXC_BREAKPOINT on the executor check the first time CoreMotion
+    /// invoked it. The handler hops to the MainActor asynchronously for the
+    /// isolated work (generation gate + noteYaw).
+    private nonisolated func makeMotionHandler(generation: Int) -> (CMDeviceMotion?, Error?) -> Void {
+        { [weak self] motion, _ in
             guard let motion, let self else { return }
             let yaw = motion.attitude.yaw
             Task { @MainActor in
