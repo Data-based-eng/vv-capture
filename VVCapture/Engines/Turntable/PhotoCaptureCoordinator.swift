@@ -591,7 +591,20 @@ final class PhotoCaptureCoordinator: NSObject, @unchecked Sendable {
             pendingCaptures[settingsID] = delegate
         }
 
-        photoOutput.capturePhoto(with: settings, delegate: delegate)
+        // Swift cannot catch the NSException that
+        // -capturePhotoWithSettings:delegate: throws for invalid settings —
+        // it would SIGABRT the app (builds 1-3, TestFlight 2026-10-18).
+        // The ObjC guard converts a rejected settings combination into a
+        // rejected shot, and its error carries the exception's name and
+        // reason so the offending combination gets logged, not lost.
+        if let requestError = PhotoCaptureGuard.capturePhoto(with: photoOutput,
+                                                             settings: settings,
+                                                             delegate: delegate) {
+            pendingLock.withLock { pendingCaptures[settingsID] = nil }
+            Self.logger.error("Photo request rejected: \(requestError.localizedDescription, privacy: .public)")
+            onShotRejected(String(localized: "Couldn't start frame \(index): \(requestError.localizedDescription)"))
+            return
+        }
     }
 
     private func handle(result: Result<PhotoDelegate.Capture, Error>, index: Int, destination: URL) {
