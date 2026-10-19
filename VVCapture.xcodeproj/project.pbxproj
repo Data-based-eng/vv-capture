@@ -572,6 +572,7 @@
 				DEVELOPMENT_TEAM = F567VF9J9R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_CFBundleDisplayName = "VV Capture";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is needed to 3D-scan products for VisionVend onboarding.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -603,6 +604,7 @@
 				DEVELOPMENT_TEAM = F567VF9J9R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_CFBundleDisplayName = "VV Capture";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is needed to 3D-scan products for VisionVend onboarding.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -637,6 +639,7 @@
 				DEVELOPMENT_TEAM = F567VF9J9R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_CFBundleDisplayName = "VV Capture";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -664,6 +667,7 @@
 				DEVELOPMENT_TEAM = F567VF9J9R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_CFBundleDisplayName = "VV Capture";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
