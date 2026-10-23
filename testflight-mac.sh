@@ -47,7 +47,7 @@ print("  app record OK:", d["data"][0]["id"])
 PYEOF
 
 echo "==> Bumping Mac build number"
-python3 - "VVCapture.xcodeproj" "com.visionvend.capture.mac" <<'PYEOF'
+python3 - "VVCapture.xcodeproj/project.pbxproj" "com.visionvend.capture.mac" <<'PYEOF'
 import io, re, sys
 proj, bid = sys.argv[1:3]
 t = io.open(proj, encoding="utf-8").read()
